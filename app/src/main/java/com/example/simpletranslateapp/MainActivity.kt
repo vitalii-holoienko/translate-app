@@ -1,7 +1,9 @@
 package com.example.simpletranslateapp
 
 
+import android.content.Context
 import android.content.Intent
+import android.content.SharedPreferences
 import android.os.Bundle
 import android.util.Log
 import android.view.ViewTreeObserver
@@ -101,19 +103,42 @@ import com.example.simpletranslateapp.ui.theme.SimpleTranslateAppTheme
 
 
 class MainActivity : ComponentActivity() {
+    private lateinit var viewModel: MainViewModel
+    private lateinit var sharedPreferences : SharedPreferences
     override fun onCreate(savedInstanceState: Bundle?) {
-
         super.onCreate(savedInstanceState)
-        val viewModel: MainViewModel = ViewModelProvider(this).get(MainViewModel::class.java)
-        viewModel.startConnectivityObserve(this)
+        viewModel = ViewModelProvider(this).get(MainViewModel::class.java)
         WindowCompat.setDecorFitsSystemWindows(window, false)
+        viewModel.startConnectivityObserve(this)
+        val sourceLanguageFromIntent = intent.getStringExtra("sourceLanguage")
+        val targetLanguageFromIntent = intent.getStringExtra("targetLanguage")
+
+        sharedPreferences = getSharedPreferences("main_preferences", Context.MODE_PRIVATE)
+
+        val sourceLanguageFromPrefs = sharedPreferences.getString("sourceLanguage", "").orEmpty()
+        val targetLanguageFromPrefs = sharedPreferences.getString("targetLanguage", "").orEmpty()
+
+        if(sourceLanguageFromPrefs != "") viewModel.changeSourceLanguage(sourceLanguageFromPrefs)
+        if(targetLanguageFromPrefs != "") viewModel.changeTargetLanguage(targetLanguageFromPrefs)
+
+        if(sourceLanguageFromIntent!=null) viewModel.changeSourceLanguage(sourceLanguageFromIntent)
+        if(targetLanguageFromIntent!=null) viewModel.changeTargetLanguage(targetLanguageFromIntent)
+
         setContent {
             SimpleTranslateAppTheme {
                 UI(viewModel)
             }
         }
     }
+
+    override fun onStop() {
+        super.onStop()
+        viewModel.saveDataToPrefs(sharedPreferences)
+    }
 }
+
+
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun UI(mainViewModel: MainViewModel) {
@@ -276,12 +301,6 @@ fun MainContent(padding: PaddingValues, mainViewModel: MainViewModel){
                     }
                 }
 
-                var translatedText by remember {
-                    mutableStateOf("")
-                }
-                var displayError by remember{
-                    mutableStateOf(false)
-                }
                 translatedText = mainViewModel.translatedText.observeAsState("").value
                 BasicText(
                     text = translatedText,
@@ -306,44 +325,44 @@ fun Footer(mainViewModel: MainViewModel){
             .background(Color(99, 67, 48)),
         horizontalAlignment = Alignment.CenterHorizontally
     ){
-        val context = LocalContext.current
+        val context = LocalContext.current;
+        Row(
+            modifier = Modifier.padding(0.dp,10.dp,0.dp,2.dp)
+        ){
+            Box(
+                modifier = Modifier
+                    .width(130.dp)
+                    .height(50.dp)
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(Color(246, 228, 217)).clickable {
+                        val intent = Intent(context, ChooseLanguageActivity::class.java).also{
+                            it.putExtra("source", mainViewModel.sourceLanguage.value)
+                            it.putExtra("from", "source")
+                        }
+                        context.startActivity(intent) },
+                contentAlignment = Alignment.Center
+                ){ mainViewModel.sourceLanguage.value?.let { Text(text = it, color = Color(99, 67, 48), fontFamily = FontFamily(Font(R.font.poppins_regular)),) } }
+                    Image(
+                        painter = painterResource(id = R.drawable.arrows1_icon),
+                        contentDescription = null,
+                        modifier = Modifier
+                            .size(50.dp)
+                            .scale(2f)
+                    )
 
-            Row(
-                modifier = Modifier.padding(0.dp,10.dp,0.dp,2.dp)
-            ){
-                Box(
-                    modifier = Modifier
-                        .width(130.dp)
-                        .height(50.dp)
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(Color(246, 228, 217)).clickable {
+                    Box(
+                        modifier = Modifier
+                            .width(130.dp)
+                            .height(50.dp)
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(Color(246, 228, 217)).clickable {
                                 val intent = Intent(context, ChooseLanguageActivity::class.java).also{
-                                    it.putExtra("source", "source")
+                                    it.putExtra("target", mainViewModel.targetLanguage.value)
+                                    it.putExtra("from", "target")
                                 }
-                                context.startActivity(intent)
-                        },
-                    contentAlignment = Alignment.Center
-                ){ Text(text = "Language", color = Color(99, 67, 48), fontFamily = FontFamily(Font(R.font.poppins_regular)),) }
-
-
-                Image(
-                    painter = painterResource(id = R.drawable.arrows1_icon),
-                    contentDescription = null,
-                    modifier = Modifier
-                        .size(50.dp)
-                        .scale(2f)
-                )
-
-                Box(
-                    modifier = Modifier
-                        .width(130.dp)
-                        .height(50.dp)
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(Color(246, 228, 217)),
-                    contentAlignment = Alignment.Center
-                ){ Text(text = "Language", color = Color(99, 67, 48), fontFamily = FontFamily(Font(R.font.poppins_regular))) }
-
-
+                                context.startActivity(intent) },
+                        contentAlignment = Alignment.Center
+                    ){ mainViewModel.targetLanguage.value?.let { Text(text = it, color = Color(99, 67, 48), fontFamily = FontFamily(Font(R.font.poppins_regular))) } }
             }
 
             Box(modifier = Modifier.padding(0.dp, 0.dp, 0.dp, 0.dp))

@@ -2,6 +2,7 @@ package com.example.simpletranslateapp
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
+import android.content.SharedPreferences
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.os.Build
@@ -12,51 +13,66 @@ import androidx.lifecycle.ViewModel
 import com.google.cloud.translate.Translate
 import com.google.cloud.translate.TranslateOptions
 import com.google.cloud.translate.Translation
+import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import java.io.IOException
 
 
 class MainViewModel : ViewModel() {
-    val inputIsValid = MutableLiveData<Boolean>()
     var displayInternetConnectionError = MutableLiveData<Boolean>()
-    val inputTextSize = MutableLiveData<Int>()
+    val inputTextSize =  MutableLiveData<Int>()
     var translatedText = MutableLiveData<String>()
-
-    val API_KEY = "AIzaSyD6BNc6OpDunxIUv99ciWYdKt_loiJkqOY"
-    val TAG = "dain"
-
-    private var translate: Translate = TranslateOptions.newBuilder().setApiKey(API_KEY).build().service
-
+    var sourceLanguage = MutableLiveData<String>()
+    var targetLanguage = MutableLiveData<String>()
+    private val translateText = TranslateText()
+    private val TAG = "dain"
     lateinit var connectivityObserver: NetworkConnectivityObserver
 
+    init {
+        sourceLanguage.value = "Automatically"
+        targetLanguage.value = "English"
+    }
+    override fun onCleared() {
+        super.onCleared()
+        Log.d(TAG, "end")
+    }
     fun startConnectivityObserve(context:Context){
         connectivityObserver = NetworkConnectivityObserver(context)
     }
-
+    public fun changeSourceLanguage(language:String){
+        translateText.setSourceLanguage(language)
+        sourceLanguage.value = language
+    }
+    public fun changeTargetLanguage(language:String){
+        translateText.setTargetLanguage(language)
+        targetLanguage.value = language
+    }
+    public fun saveDataToPrefs(sharedPreferences: SharedPreferences){
+        val editor = sharedPreferences.edit()
+        editor.putString("targetLanguage", targetLanguage.value)
+        editor.putString("sourceLanguage", sourceLanguage.value)
+        editor.apply()
+    }
     fun processingInput(input:String, context: Context){
         changeInputUI(input)
         GlobalScope.launch {
-            translateText(input, context)
+            getTranslatedText(input, context)
         }
     }
 
-    private suspend fun translateText(input: String, context: Context) {
+    private suspend fun getTranslatedText(input: String, context: Context) {
         try {
             if (isInternetAvailable(context)) {
-                val options = Translate.TranslateOption.targetLanguage("es")
-                val translation: Translation = translate.translate(input, options)
-                translatedText.postValue(translation.getTranslatedText())
+                translatedText.postValue(translateText.translate(input))
                 displayInternetConnectionError.value = false;
-            } else {
+            } else
                 displayInternetConnectionError.value = true;
-            }
+
         } catch (ex: IOException) {
             ex.message?.let { Log.d(TAG, it) }
-            // Handle other IO exceptions if needed
         } catch (ex: Exception) {
             ex.message?.let { Log.d(TAG, it) }
-            // Handle other exceptions if needed
         }
     }
     private fun isInternetAvailable(context: Context): Boolean {
@@ -65,9 +81,6 @@ class MainViewModel : ViewModel() {
         val actNw = connectivityManager.getNetworkCapabilities(networkCapabilities) ?: return false
         return actNw.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
     }
-
-    val validateInput = {input:String->inputIsValid.value = input.length <= 300}
-
     fun changeInputUI(input:String){
         if(input.length < 50){
             inputTextSize.value = 30;
@@ -81,6 +94,4 @@ class MainViewModel : ViewModel() {
             return
         }
     }
-
-
 }
