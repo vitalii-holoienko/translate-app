@@ -7,13 +7,16 @@ import android.content.SharedPreferences
 import android.os.Bundle
 import android.util.Log
 import android.view.ViewTreeObserver
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.Indication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.indication
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Arrangement
@@ -77,6 +80,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
@@ -84,6 +88,7 @@ import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
@@ -110,6 +115,7 @@ class MainActivity : ComponentActivity() {
         viewModel = ViewModelProvider(this).get(MainViewModel::class.java)
         WindowCompat.setDecorFitsSystemWindows(window, false)
         viewModel.startConnectivityObserve(this)
+        viewModel.getActivityContext(this)
         val sourceLanguageFromIntent = intent.getStringExtra("sourceLanguage")
         val targetLanguageFromIntent = intent.getStringExtra("targetLanguage")
 
@@ -216,6 +222,7 @@ fun MainContent(padding: PaddingValues, mainViewModel: MainViewModel){
                 .padding(padding)
                 .clip(RoundedCornerShape(15.dp, 15.dp, 15.dp, 15.dp))
                 .background(Color(246, 228, 217))
+                .verticalScroll(rememberScrollState())
         ){
             var text by remember {
                 mutableStateOf("")
@@ -228,34 +235,41 @@ fun MainContent(padding: PaddingValues, mainViewModel: MainViewModel){
                 mutableStateOf("")
             }
 
+            var inputText by remember{
+                mutableStateOf("")
+            }
+
             textSize = mainViewModel.inputTextSize.observeAsState(30).value;
+            inputText = mainViewModel.inputText.observeAsState("").value
             Column(
-                modifier = Modifier.padding(10.dp)
+                modifier = Modifier
+                    .padding(10.dp)
+
             ) {
                 val enabled by remember { mutableStateOf(true) }
                 val interactionSource = remember { MutableInteractionSource() }
                 val isFocused by interactionSource.collectIsFocusedAsState()
+                val localClipboardManager = LocalClipboardManager.current
                 val focusManager = LocalFocusManager.current
                 val keyboardController = LocalSoftwareKeyboardController.current
                 val context = LocalContext.current
 
                 BasicTextField(
-                    value = text,
+                    value = inputText,
                     onValueChange = {
-                        text = it
                         mainViewModel.processingInput(it, context)
+
                     },
                     interactionSource = interactionSource,
                     modifier = Modifier
                         .fillMaxWidth()
                         .wrapContentHeight()
                         .animateContentSize()
-                        .heightIn(0.dp, 250.dp)
-                        .padding(0.dp, 12.5f.dp, 0.dp, 22.5f.dp),
+                        .padding(0.dp, 12.5f.dp, 0.dp, 12.5f.dp),
 
                     decorationBox = { innerTextField ->
                         TextFieldDefaults.OutlinedTextFieldDecorationBox(
-                            value = text,
+                            value = inputText,
                             innerTextField = innerTextField,
                             enabled = enabled,
                             singleLine = false,
@@ -265,7 +279,8 @@ fun MainContent(padding: PaddingValues, mainViewModel: MainViewModel){
                             placeholder = { Text(text = "Enter text",
                                 fontSize = textSize.sp,
                                 fontFamily = FontFamily(Font(R.font.inter_regular)),
-                                color = Color(99, 67, 4)) },
+                                color = Color(99, 67, 4),
+                            ) },
                             colors = TextFieldDefaults.outlinedTextFieldColors(
                                 unfocusedBorderColor = Color.Transparent,
                                 focusedBorderColor = Color.Transparent,
@@ -288,29 +303,63 @@ fun MainContent(padding: PaddingValues, mainViewModel: MainViewModel){
                     ) ,
 
                 )
-                if(isFocused){
+                translatedText = mainViewModel.translatedText.observeAsState("").value
+
+                if(translatedText.length > 0){
                     Box(
                         modifier = Modifier.fillMaxWidth()
                     ){
                         Divider(
                             modifier = Modifier
                                 .width(180.dp)
+                                .padding(0.dp, 0.dp, 0.dp, 12.5f.dp)
                                 .align(Alignment.Center),
                             color = Color(99, 67, 4)
                         )
                     }
                 }
 
-                translatedText = mainViewModel.translatedText.observeAsState("").value
-                BasicText(
-                    text = translatedText,
-                    modifier = Modifier
-                        .height(200.dp)
-                        .padding(0.dp, 22.5f.dp, 0.dp, 0.dp),
-                    TextStyle(
-                        fontSize = textSize.sp,
-                        fontFamily = FontFamily(Font(R.font.inter_regular)),
-                        color = Color(99, 67, 4),))
+                    BasicText(
+                        text = translatedText,
+                        modifier = Modifier
+                            .wrapContentHeight()
+                            .animateContentSize()
+                            .padding(0.dp, 0.dp, 0.dp, 0.dp),
+                        TextStyle(
+                            fontSize = textSize.sp,
+                            fontFamily = FontFamily(Font(R.font.inter_regular)),
+                            color = Color( 99, 67, 4),))
+
+
+
+                if(translatedText.length > 0){
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(0.dp, 10.dp,0.dp,0.dp)
+                            .height(35.dp),
+                        horizontalArrangement = Arrangement.End
+                    ){
+                        Image(
+                            painter = painterResource(id = R.drawable.copy_text),
+                            contentDescription = null,
+                            modifier = Modifier
+                                .size(50.dp)
+                                .scale(0.8f)
+                                .clickable {
+                                    localClipboardManager.setText(AnnotatedString(translatedText))
+                                    Toast.makeText(context, "Translation copied", Toast.LENGTH_LONG).show()
+                                }
+                        )
+                        Image(
+                            painter = painterResource(id = R.drawable.add_to_favourite_icon),
+                            contentDescription = null,
+                            modifier = Modifier
+                                .size(50.dp)
+                                .scale(0.8f)
+                        )
+                    }
+                }
             }
         }
     }
@@ -326,6 +375,15 @@ fun Footer(mainViewModel: MainViewModel){
         horizontalAlignment = Alignment.CenterHorizontally
     ){
         val context = LocalContext.current;
+        var sourceLanguage by remember{
+            mutableStateOf("")
+        }
+        var targetLanguage by remember{
+            mutableStateOf("")
+        }
+
+        sourceLanguage = mainViewModel.sourceLanguage.observeAsState("").value
+        targetLanguage = mainViewModel.targetLanguage.observeAsState("").value
         Row(
             modifier = Modifier.padding(0.dp,10.dp,0.dp,2.dp)
         ){
@@ -334,20 +392,30 @@ fun Footer(mainViewModel: MainViewModel){
                     .width(130.dp)
                     .height(50.dp)
                     .clip(RoundedCornerShape(10.dp))
-                    .background(Color(246, 228, 217)).clickable {
-                        val intent = Intent(context, ChooseLanguageActivity::class.java).also{
+                    .background(Color(246, 228, 217))
+                    .clickable {
+                        val intent = Intent(context, ChooseLanguageActivity::class.java).also {
                             it.putExtra("source", mainViewModel.sourceLanguage.value)
                             it.putExtra("from", "source")
                         }
-                        context.startActivity(intent) },
+                        context.startActivity(intent)
+                    },
                 contentAlignment = Alignment.Center
-                ){ mainViewModel.sourceLanguage.value?.let { Text(text = it, color = Color(99, 67, 48), fontFamily = FontFamily(Font(R.font.poppins_regular)),) } }
+                ){
+                    Text(text = sourceLanguage, color = Color(99, 67, 48),
+                    fontFamily = FontFamily(Font(R.font.poppins_regular)),)
+                 }
+            val interactionSource = remember { MutableInteractionSource() }
                     Image(
                         painter = painterResource(id = R.drawable.arrows1_icon),
                         contentDescription = null,
                         modifier = Modifier
                             .size(50.dp)
                             .scale(2f)
+                            .clickable(indication = null, onClick = {
+                                mainViewModel.swapSourceAndTargetLanguages()
+                            }, interactionSource = interactionSource)
+
                     )
 
                     Box(
@@ -355,12 +423,15 @@ fun Footer(mainViewModel: MainViewModel){
                             .width(130.dp)
                             .height(50.dp)
                             .clip(RoundedCornerShape(10.dp))
-                            .background(Color(246, 228, 217)).clickable {
-                                val intent = Intent(context, ChooseLanguageActivity::class.java).also{
-                                    it.putExtra("target", mainViewModel.targetLanguage.value)
-                                    it.putExtra("from", "target")
-                                }
-                                context.startActivity(intent) },
+                            .background(Color(246, 228, 217))
+                            .clickable {
+                                val intent =
+                                    Intent(context, ChooseLanguageActivity::class.java).also {
+                                        it.putExtra("target", mainViewModel.targetLanguage.value)
+                                        it.putExtra("from", "target")
+                                    }
+                                context.startActivity(intent)
+                            },
                         contentAlignment = Alignment.Center
                     ){ mainViewModel.targetLanguage.value?.let { Text(text = it, color = Color(99, 67, 48), fontFamily = FontFamily(Font(R.font.poppins_regular))) } }
             }
@@ -449,7 +520,8 @@ fun InternetConnectionErrorWarning(padding: PaddingValues){
                 .align(Alignment.Center)
             ){
                 Column(
-                    modifier = Modifier.align(Alignment.Center)
+                    modifier = Modifier
+                        .align(Alignment.Center)
                         .fillMaxWidth()
                         .fillMaxHeight(),
                     horizontalAlignment = Alignment.CenterHorizontally

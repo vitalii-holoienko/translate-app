@@ -1,4 +1,5 @@
 package com.example.simpletranslateapp
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
@@ -22,9 +23,11 @@ import java.io.IOException
 class MainViewModel : ViewModel() {
     var displayInternetConnectionError = MutableLiveData<Boolean>()
     val inputTextSize =  MutableLiveData<Int>()
+    var inputText = MutableLiveData<String>()
     var translatedText = MutableLiveData<String>()
     var sourceLanguage = MutableLiveData<String>()
     var targetLanguage = MutableLiveData<String>()
+    private lateinit var context: Context
     private val translateText = TranslateText()
     private val TAG = "dain"
     lateinit var connectivityObserver: NetworkConnectivityObserver
@@ -37,16 +40,32 @@ class MainViewModel : ViewModel() {
         super.onCleared()
         Log.d(TAG, "end")
     }
+
+    fun getActivityContext(context: Context){
+        this.context = context
+    }
     fun startConnectivityObserve(context:Context){
         connectivityObserver = NetworkConnectivityObserver(context)
     }
-    public fun changeSourceLanguage(language:String){
+    fun changeSourceLanguage(language:String){
         translateText.setSourceLanguage(language)
         sourceLanguage.value = language
     }
-    public fun changeTargetLanguage(language:String){
+    fun changeTargetLanguage(language:String){
         translateText.setTargetLanguage(language)
         targetLanguage.value = language
+    }
+
+    fun swapSourceAndTargetLanguages(){
+        sourceLanguage.value = targetLanguage.value.also { targetLanguage.value = sourceLanguage.value }
+        translateText.setSourceLanguage(sourceLanguage.value!!)
+        translateText.setTargetLanguage(targetLanguage.value!!)
+
+        inputText.value = translatedText.value
+        translatedText.value = ""
+        GlobalScope.launch {
+            getTranslatedText(inputText.value!!, context)
+        }
     }
     public fun saveDataToPrefs(sharedPreferences: SharedPreferences){
         val editor = sharedPreferences.edit()
@@ -55,7 +74,10 @@ class MainViewModel : ViewModel() {
         editor.apply()
     }
     fun processingInput(input:String, context: Context){
+        inputText.value = input
+
         changeInputUI(input)
+
         GlobalScope.launch {
             getTranslatedText(input, context)
         }
