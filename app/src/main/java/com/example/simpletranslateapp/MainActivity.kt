@@ -170,24 +170,31 @@ fun Header(mainViewModel: MainViewModel){
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .background(Color(99, 67, 48))
+            .background(Color(43, 40, 43))
             .height(70.dp)
             .padding(0.dp, 25.dp, 0.dp, 0.dp)
 
     ){
+        var context = LocalContext.current;
         Image(
-            painter = painterResource(id = R.drawable.star_icon1),
+            painter = painterResource(id = R.drawable.new_star_icon),
             contentDescription = null,
             modifier = Modifier
                 .size(50.dp)
                 .align(alignment = Alignment.CenterStart)
-                .padding(6.dp, 5.dp, 0.dp, 6.dp)
-                .scale(1.2f),
+                .padding(6.dp, 7.dp, 0.dp, 6.dp)
+                .scale(0.90f)
+                .clickable {
+                    val intent = Intent(context, FavouritePageActivity::class.java).also {
+
+                    }
+                    context.startActivity(intent)
+                },
             contentScale = ContentScale.Crop
         )
         Text(
             text = stringResource(R.string.simpletranslate),
-            color = Color(255, 255, 255),
+            color = Color(224, 224, 224),
             fontSize = 27.sp,
             fontFamily = FontFamily(Font(R.font.salsa_regular)),
             textAlign = TextAlign.Center,
@@ -212,7 +219,7 @@ fun MainContent(padding: PaddingValues, mainViewModel: MainViewModel){
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(color = Color(99, 67, 48))
+            .background(Color(43, 40, 43))
             .padding(5.dp)
         ,
     ){
@@ -221,7 +228,7 @@ fun MainContent(padding: PaddingValues, mainViewModel: MainViewModel){
                 .fillMaxSize()
                 .padding(padding)
                 .clip(RoundedCornerShape(15.dp, 15.dp, 15.dp, 15.dp))
-                .background(Color(246, 228, 217))
+                .background(Color(53, 50, 53))
                 .verticalScroll(rememberScrollState())
         ){
             var text by remember {
@@ -279,7 +286,7 @@ fun MainContent(padding: PaddingValues, mainViewModel: MainViewModel){
                             placeholder = { Text(text = "Enter text",
                                 fontSize = textSize.sp,
                                 fontFamily = FontFamily(Font(R.font.inter_regular)),
-                                color = Color(99, 67, 4),
+                                color = Color(224, 224, 224),
                             ) },
                             colors = TextFieldDefaults.outlinedTextFieldColors(
                                 unfocusedBorderColor = Color.Transparent,
@@ -299,7 +306,7 @@ fun MainContent(padding: PaddingValues, mainViewModel: MainViewModel){
                     textStyle = TextStyle(
                         fontSize = textSize.sp,
                         fontFamily = FontFamily(Font(R.font.inter_regular)),
-                        color = Color(99, 67, 4)
+                        color = Color(244, 241, 242)
                     ) ,
 
                 )
@@ -328,7 +335,7 @@ fun MainContent(padding: PaddingValues, mainViewModel: MainViewModel){
                         TextStyle(
                             fontSize = textSize.sp,
                             fontFamily = FontFamily(Font(R.font.inter_regular)),
-                            color = Color( 99, 67, 4),))
+                            color = Color(244, 241, 242)))
 
 
 
@@ -371,7 +378,7 @@ fun Footer(mainViewModel: MainViewModel){
         modifier = Modifier
             .fillMaxWidth()
             .height(230.dp)
-            .background(Color(99, 67, 48)),
+            .background(Color(43, 40, 43)),
         horizontalAlignment = Alignment.CenterHorizontally
     ){
         val context = LocalContext.current;
@@ -392,7 +399,7 @@ fun Footer(mainViewModel: MainViewModel){
                     .width(130.dp)
                     .height(50.dp)
                     .clip(RoundedCornerShape(10.dp))
-                    .background(Color(246, 228, 217))
+                    .background(Color(53, 50, 53))
                     .clickable {
                         val intent = Intent(context, ChooseLanguageActivity::class.java).also {
                             it.putExtra("source", mainViewModel.sourceLanguage.value)
@@ -402,7 +409,7 @@ fun Footer(mainViewModel: MainViewModel){
                     },
                 contentAlignment = Alignment.Center
                 ){
-                    Text(text = sourceLanguage, color = Color(99, 67, 48),
+                    Text(text = sourceLanguage, color = Color(224, 224, 224),
                     fontFamily = FontFamily(Font(R.font.poppins_regular)),)
                  }
             val interactionSource = remember { MutableInteractionSource() }
@@ -423,7 +430,7 @@ fun Footer(mainViewModel: MainViewModel){
                             .width(130.dp)
                             .height(50.dp)
                             .clip(RoundedCornerShape(10.dp))
-                            .background(Color(246, 228, 217))
+                            .background(Color(53, 50, 53))
                             .clickable {
                                 val intent =
                                     Intent(context, ChooseLanguageActivity::class.java).also {
@@ -433,7 +440,7 @@ fun Footer(mainViewModel: MainViewModel){
                                 context.startActivity(intent)
                             },
                         contentAlignment = Alignment.Center
-                    ){ mainViewModel.targetLanguage.value?.let { Text(text = it, color = Color(99, 67, 48), fontFamily = FontFamily(Font(R.font.poppins_regular))) } }
+                    ){ mainViewModel.targetLanguage.value?.let { Text(text = it, color = Color(224, 224, 224), fontFamily = FontFamily(Font(R.font.poppins_regular))) } }
             }
 
             Box(modifier = Modifier.padding(0.dp, 0.dp, 0.dp, 0.dp))
@@ -446,7 +453,7 @@ fun Footer(mainViewModel: MainViewModel){
                         .align(alignment = Alignment.Center)
                         .size(65.dp)
                         .clip(RoundedCornerShape(16.dp)) // Adjust the corner radius as needed
-                        .background(Color(246, 228, 217)) // Set the background color
+                        .background(Color(53, 50, 53))// Set the background color
                         .shadow(
                             50.dp,
                             shape = RoundedCornerShape(16.dp)
@@ -463,7 +470,7 @@ fun Footer(mainViewModel: MainViewModel){
                         .align(alignment = Alignment.Center)
                         .size(90.dp)
                         .clip(RoundedCornerShape(60.dp)) // Adjust the corner radius as needed
-                        .background(Color(246, 228, 217)) // Set the background color
+                        .background(Color(53, 50, 53)) // Set the background color
                         .shadow(
                             50.dp,
                             shape = RoundedCornerShape(40.dp)
@@ -482,7 +489,7 @@ fun Footer(mainViewModel: MainViewModel){
                         .align(alignment = Alignment.Center)
                         .size(65.dp)
                         .clip(RoundedCornerShape(16.dp)) // Adjust the corner radius as needed
-                        .background(Color(246, 228, 217)) // Set the background color
+                        .background(Color(53, 50, 53)) // Set the background color
                         .shadow(
                             50.dp,
                             shape = RoundedCornerShape(16.dp)
