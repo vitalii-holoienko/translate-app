@@ -48,6 +48,7 @@ class MainViewModel : ViewModel() {
         connectivityObserver = NetworkConnectivityObserver(context)
     }
     fun changeSourceLanguage(language:String){
+
         translateText.setSourceLanguage(language)
         sourceLanguage.value = language
     }

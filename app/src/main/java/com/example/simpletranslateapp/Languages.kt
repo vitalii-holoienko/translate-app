@@ -3,6 +3,7 @@ package com.example.simpletranslateapp
 class Languages {
     companion object{
         public val languages = mapOf<String, String>(
+            "Detect automatically" to "",
             "Albanian" to "sq",
             "Arabic" to "ar",
             "Armenian" to "hy",
