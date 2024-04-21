@@ -288,7 +288,7 @@ fun MainContent(padding: PaddingValues, mainViewModel: MainViewModel){
                                 .width(180.dp)
                                 .padding(0.dp, 0.dp, 0.dp, 12.5f.dp)
                                 .align(Alignment.Center),
-                            color = Color(99, 67, 4)
+                            color = Color(43,40,43)
                         )
                     }
                 }
@@ -315,7 +315,7 @@ fun MainContent(padding: PaddingValues, mainViewModel: MainViewModel){
                         horizontalArrangement = Arrangement.End
                     ){
                         Image(
-                            painter = painterResource(id = R.drawable.copy_text),
+                            painter = painterResource(id = R.drawable.copy_text2),
                             contentDescription = null,
                             modifier = Modifier
                                 .size(50.dp)
@@ -326,7 +326,7 @@ fun MainContent(padding: PaddingValues, mainViewModel: MainViewModel){
                                 }
                         )
                         Image(
-                            painter = painterResource(id = R.drawable.add_to_favourite_icon),
+                            painter = painterResource(id = R.drawable.add_to_favourite_icon3),
                             contentDescription = null,
                             modifier = Modifier
                                 .size(50.dp)

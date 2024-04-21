@@ -33,8 +33,10 @@ class MainViewModel : ViewModel() {
     lateinit var connectivityObserver: NetworkConnectivityObserver
 
     init {
-        sourceLanguage.value = "Automatically"
+        sourceLanguage.value = "Detect Automatically"
         targetLanguage.value = "English"
+        inputText.value = ""
+        translatedText.value = ""
     }
     override fun onCleared() {
         super.onCleared()
@@ -58,6 +60,7 @@ class MainViewModel : ViewModel() {
     }
 
     fun swapSourceAndTargetLanguages(){
+        if(sourceLanguage.value == "Detect automatically")return
         sourceLanguage.value = targetLanguage.value.also { targetLanguage.value = sourceLanguage.value }
         translateText.setSourceLanguage(sourceLanguage.value!!)
         translateText.setTargetLanguage(targetLanguage.value!!)
