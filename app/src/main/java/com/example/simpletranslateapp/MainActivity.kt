@@ -76,20 +76,23 @@ import com.example.simpletranslateapp.ui.theme.SimpleTranslateAppTheme
 
 class MainActivity : ComponentActivity() {
     private lateinit var viewModel: MainViewModel
-    private lateinit var sharedPreferences : SharedPreferences
+    private lateinit var mainSharedPreferences : SharedPreferences
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        viewModel = ViewModelProvider(this).get(MainViewModel::class.java)
-        WindowCompat.setDecorFitsSystemWindows(window, false)
+
+        viewModel = ViewModelProvider(this, MainViewModel.factory).get(MainViewModel::class.java)
         viewModel.startConnectivityObserve(this)
         viewModel.getActivityContext(this)
+
+        mainSharedPreferences = getSharedPreferences("main_preferences", Context.MODE_PRIVATE)
+
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+
         val sourceLanguageFromIntent = intent.getStringExtra("sourceLanguage")
         val targetLanguageFromIntent = intent.getStringExtra("targetLanguage")
 
-        sharedPreferences = getSharedPreferences("main_preferences", Context.MODE_PRIVATE)
-
-        val sourceLanguageFromPrefs = sharedPreferences.getString("sourceLanguage", "").orEmpty()
-        val targetLanguageFromPrefs = sharedPreferences.getString("targetLanguage", "").orEmpty()
+        val sourceLanguageFromPrefs = mainSharedPreferences.getString("sourceLanguage", "").orEmpty()
+        val targetLanguageFromPrefs = mainSharedPreferences.getString("targetLanguage", "").orEmpty()
 
         if(sourceLanguageFromPrefs != "") viewModel.changeSourceLanguage(sourceLanguageFromPrefs)
         if(targetLanguageFromPrefs != "") viewModel.changeTargetLanguage(targetLanguageFromPrefs)
@@ -106,7 +109,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onStop() {
         super.onStop()
-        viewModel.saveDataToPrefs(sharedPreferences)
+        viewModel.saveDataToPrefs(mainSharedPreferences)
     }
 }
 
@@ -152,9 +155,7 @@ fun Header(mainViewModel: MainViewModel){
                 .padding(6.dp, 7.dp, 0.dp, 6.dp)
                 .scale(0.90f)
                 .clickable {
-                    val intent = Intent(context, FavouritePageActivity::class.java).also {
-
-                    }
+                    val intent = Intent(context, FavouritePageActivity::class.java)
                     context.startActivity(intent)
                 },
             contentScale = ContentScale.Crop
@@ -187,8 +188,7 @@ fun MainContent(padding: PaddingValues, mainViewModel: MainViewModel){
         modifier = Modifier
             .fillMaxSize()
             .background(Color(43, 40, 43))
-            .padding(5.dp)
-        ,
+            .padding(5.dp),
     ){
         Box(
             modifier = Modifier
@@ -198,9 +198,6 @@ fun MainContent(padding: PaddingValues, mainViewModel: MainViewModel){
                 .background(Color(53, 50, 53))
                 .verticalScroll(rememberScrollState())
         ){
-            var text by remember {
-                mutableStateOf("")
-            }
             var textSize by remember {
                 mutableStateOf(30)
             }
@@ -222,7 +219,6 @@ fun MainContent(padding: PaddingValues, mainViewModel: MainViewModel){
             ) {
                 val enabled by remember { mutableStateOf(true) }
                 val interactionSource = remember { MutableInteractionSource() }
-                val isFocused by interactionSource.collectIsFocusedAsState()
                 val localClipboardManager = LocalClipboardManager.current
                 val focusManager = LocalFocusManager.current
                 val keyboardController = LocalSoftwareKeyboardController.current
@@ -232,7 +228,6 @@ fun MainContent(padding: PaddingValues, mainViewModel: MainViewModel){
                     value = inputText,
                     onValueChange = {
                         mainViewModel.processingInput(it, context)
-
                     },
                     interactionSource = interactionSource,
                     modifier = Modifier
@@ -250,7 +245,8 @@ fun MainContent(padding: PaddingValues, mainViewModel: MainViewModel){
                             contentPadding = PaddingValues(0.dp),
                             visualTransformation = VisualTransformation.None,
                             interactionSource = interactionSource,
-                            placeholder = { Text(text = "Enter text",
+                            placeholder = { Text(
+                                text = "Enter text",
                                 fontSize = textSize.sp,
                                 fontFamily = FontFamily(Font(R.font.inter_regular)),
                                 color = Color(224, 224, 224),
@@ -310,7 +306,7 @@ fun MainContent(padding: PaddingValues, mainViewModel: MainViewModel){
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(0.dp, 10.dp,0.dp,0.dp)
+                            .padding(0.dp, 10.dp, 0.dp, 0.dp)
                             .height(35.dp),
                         horizontalArrangement = Arrangement.End
                     ){
@@ -322,16 +318,37 @@ fun MainContent(padding: PaddingValues, mainViewModel: MainViewModel){
                                 .scale(0.8f)
                                 .clickable {
                                     localClipboardManager.setText(AnnotatedString(translatedText))
-                                    Toast.makeText(context, "Translation copied", Toast.LENGTH_LONG).show()
+                                    Toast
+                                        .makeText(context, "Translation copied", Toast.LENGTH_LONG)
+                                        .show()
                                 }
                         )
-                        Image(
-                            painter = painterResource(id = R.drawable.add_to_favourite_icon3),
-                            contentDescription = null,
-                            modifier = Modifier
-                                .size(50.dp)
-                                .scale(0.8f)
-                        )
+                        val inFavourite = mainViewModel.stringInFavourite.observeAsState().value
+
+                        if(!inFavourite!!){
+                            Image(
+                                painter = painterResource(id = R.drawable.add_to_favourite_icon3),
+                                contentDescription = null,
+                                modifier = Modifier
+                                    .size(50.dp)
+                                    .scale(0.8f)
+                                    .clickable {
+                                        mainViewModel.upsertSavedString()
+                                    }
+                            )
+                        }else{
+                            Image(
+                                painter = painterResource(id = R.drawable.add_to_favourite_icon_filled1),
+                                contentDescription = null,
+                                modifier = Modifier
+                                    .size(50.dp)
+                                    .scale(0.8f)
+                                    .clickable {
+                                        mainViewModel.deleteSavedString()
+                                    }
+                            )
+                        }
+
                     }
                 }
             }
@@ -355,7 +372,6 @@ fun Footer(mainViewModel: MainViewModel){
         var targetLanguage by remember{
             mutableStateOf("")
         }
-
         sourceLanguage = mainViewModel.sourceLanguage.observeAsState("").value
         targetLanguage = mainViewModel.targetLanguage.observeAsState("").value
         Row(
@@ -412,8 +428,13 @@ fun Footer(mainViewModel: MainViewModel){
                                 context.startActivity(intent)
                             },
                         contentAlignment = Alignment.Center
-                    ){ mainViewModel.targetLanguage.value?.let { Text(text = it, color = Color(224, 224, 224), fontFamily = FontFamily(Font(R.font.poppins_regular)), textAlign = TextAlign.Center,
-                        fontSize = 15.sp,) } }
+                    ){ mainViewModel.targetLanguage.value?.let { Text(
+                        text = it,
+                        color = Color(224, 224, 224),
+                        fontFamily = FontFamily(Font(R.font.poppins_regular)),
+                        textAlign = TextAlign.Center,
+                        fontSize = 15.sp,
+                    ) } }
             }
 
             Box(modifier = Modifier.padding(0.dp, 0.dp, 0.dp, 0.dp))
@@ -425,12 +446,13 @@ fun Footer(mainViewModel: MainViewModel){
                         .padding(0.dp, 0.dp, 250.dp, 0.dp)
                         .align(alignment = Alignment.Center)
                         .size(65.dp)
-                        .clip(RoundedCornerShape(16.dp)) // Adjust the corner radius as needed
-                        .background(Color(53, 50, 53))// Set the background color
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(Color(53, 50, 53))
                         .shadow(
                             50.dp,
                             shape = RoundedCornerShape(16.dp)
-                        ).scale(0.8f)
+                        )
+                        .scale(0.8f)
                         .padding(4.dp)
 
                 )
@@ -442,8 +464,8 @@ fun Footer(mainViewModel: MainViewModel){
                         .padding(0.dp, 0.dp, 0.dp, 10.dp)
                         .align(alignment = Alignment.Center)
                         .size(90.dp)
-                        .clip(RoundedCornerShape(60.dp)) // Adjust the corner radius as needed
-                        .background(Color(53, 50, 53)) // Set the background color
+                        .clip(RoundedCornerShape(60.dp))
+                        .background(Color(53, 50, 53))
                         .shadow(
                             50.dp,
                             shape = RoundedCornerShape(40.dp)
@@ -461,15 +483,14 @@ fun Footer(mainViewModel: MainViewModel){
                         .padding(250.dp, 0.dp, 0.dp, 0.dp)
                         .align(alignment = Alignment.Center)
                         .size(65.dp)
-                        .clip(RoundedCornerShape(16.dp)) // Adjust the corner radius as needed
-                        .background(Color(53, 50, 53)) // Set the background color
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(Color(53, 50, 53))
                         .shadow(
                             50.dp,
                             shape = RoundedCornerShape(16.dp)
                         )
                         .padding(4.dp)
                         .scale(0.83f)
-
                 )
             }
         }
@@ -484,8 +505,7 @@ fun InternetConnectionErrorWarning(padding: PaddingValues){
         modifier = Modifier
             .fillMaxSize()
             .background(color = Color(99, 67, 48))
-            .padding(5.dp)
-        ,
+            .padding(5.dp),
     ){
         Box(
             modifier = Modifier

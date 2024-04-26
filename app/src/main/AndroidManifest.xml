@@ -6,6 +6,7 @@
     <uses-permission android:name="android.permission.INTERNET" />
 
     <application
+        android:name=".App"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
@@ -19,11 +20,6 @@
             android:name=".FavouritePageActivity"
             android:exported="false"
             android:label="@string/title_activity_favourite_page"
-            android:theme="@style/Theme.SimpleTranslateApp" />
-        <activity
-            android:name=".MainActivity2"
-            android:exported="false"
-            android:label="@string/title_activity_main2"
             android:theme="@style/Theme.SimpleTranslateApp" />
         <activity
             android:name=".ChooseLanguageActivity"

@@ -33,8 +33,10 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModelProvider
@@ -43,8 +45,9 @@ import com.example.simpletranslateapp.ui.theme.SimpleTranslateAppTheme
 class ChooseLanguageActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val viewModel: ChooseLanguageViewModel= ViewModelProvider(this)
-            .get(ChooseLanguageViewModel::class.java)
+        val viewModel: ChooseLanguageViewModel= ViewModelProvider(this).get(ChooseLanguageViewModel::class.java)
+
+
         val from = intent.getStringExtra("from").orEmpty()
         val language = intent.getStringExtra(from)
         viewModel.from.value = from
@@ -77,41 +80,63 @@ fun UI(viewModel: ChooseLanguageViewModel){
 
 @Composable
 fun Header(viewModel : ChooseLanguageViewModel){
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(50.dp)
-            .background(Color(43, 40, 43)),
-        horizontalArrangement = Arrangement.SpaceBetween
+    Column(){
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(50.dp)
+                .background(Color(43, 40, 43)),
+            horizontalArrangement = Arrangement.SpaceBetween
 
-    ){
-        Image(
-            painter = painterResource(id = R.drawable.cancel_arrow),
-            contentDescription = null,
-            modifier = Modifier
-                .size(50.dp)
-                .padding(6.dp, 5.dp, 0.dp, 6.dp)
-                .scale(1.2f),
-        )
-        Image(
-            painter = painterResource(id = R.drawable.search_icon),
-            contentDescription = null,
-            modifier = Modifier
-                .size(50.dp)
-                .padding(6.dp, 5.dp, 6.dp, 6.dp)
-                .scale(1f),
-        )
+        ){
+            Box(modifier = Modifier.fillMaxWidth()){
+                Image(
+                    painter = painterResource(id = R.drawable.cancel_arrow),
+                    contentDescription = null,
+                    modifier = Modifier
+                        .size(50.dp)
+                        .padding(6.dp, 5.dp, 0.dp, 6.dp)
+                        .align(alignment = Alignment.CenterStart)
+                        .scale(1.1f),
+                )
+                Text(
+                    text = stringResource(R.string.simpletranslate),
+                    color = Color(224, 224, 224),
+                    fontSize = 27.sp,
+                    fontFamily = FontFamily(Font(R.font.salsa_regular)),
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier
+                        .align(alignment = Alignment.Center)
+                )
+                Image(
+                    painter = painterResource(id = R.drawable.search_icon),
+                    contentDescription = null,
+                    modifier = Modifier
+                        .size(50.dp)
+                        .padding(6.dp, 5.dp, 6.dp, 6.dp)
+                        .align(alignment = Alignment.CenterEnd)
+                        .scale(1f),
+                )
+
+            }
+
+
+        }
+
     }
+
+
 }
 @Composable
 fun MainContent(padding: PaddingValues, viewModel : ChooseLanguageViewModel){
+
     var recentLanguagesCounter by remember {
         mutableStateOf(0)
     }
     val list = remember{Languages.languages.toList()}
     var text = ""
-    if (viewModel.from.value == "source") text = "Choose source language"
-    else text = "Choose target language"
+    if (viewModel.from.value == "source") text = "Choose source language:"
+    else text = "Choose target language:"
     Column (modifier = Modifier.verticalScroll(rememberScrollState())){
         Box(
             modifier = Modifier
@@ -126,7 +151,7 @@ fun MainContent(padding: PaddingValues, viewModel : ChooseLanguageViewModel){
                 text = text ,
                 fontFamily = FontFamily(Font(R.font.inter_regular)),
                 color = Color(224, 224, 224),
-                fontSize = 28.sp,
+                fontSize = 26.sp,
 
             )
         }
