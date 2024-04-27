@@ -56,13 +56,12 @@ class MainViewModel(val database:SavedStringDataBase) : ViewModel() {
 
     var stringInFavourite = MutableLiveData<Boolean>()
 
-    var favouriteStrings = HashMap<String, String>()
-
     val translateText = TranslateText()
 
     @SuppressLint("StaticFieldLeak")
     lateinit var context: Context
     lateinit var connectivityObserver: NetworkConnectivityObserver
+
     init {
         sourceLanguage.value = "Detect Automatically"
         targetLanguage.value = "English"
@@ -73,7 +72,7 @@ class MainViewModel(val database:SavedStringDataBase) : ViewModel() {
     //Database operations
     fun upsertSavedString(){
         GlobalScope.launch {
-            val savedString : SavedString = SavedString(inputText.value!!, translatedText.value!!)
+            val savedString = SavedString(inputText.value!!, translatedText.value!!)
             database.dao.upsertString(savedString)
             stringInFavourite.postValue(true)
         }
@@ -89,11 +88,6 @@ class MainViewModel(val database:SavedStringDataBase) : ViewModel() {
         return database.dao.exists(inputText.value!!)
     }
 
-
-    fun getActivityContext(context: Context){
-        this.context = context
-    }
-
     //observing internet connection
     fun startConnectivityObserve(context:Context){
         connectivityObserver = NetworkConnectivityObserver(context)
@@ -105,7 +99,7 @@ class MainViewModel(val database:SavedStringDataBase) : ViewModel() {
         return actNw.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
     }
 
-    //changing languages logic
+    //languages changing
 
     fun changeSourceLanguage(language:String){
         translateText.setSourceLanguage(language)
@@ -137,6 +131,7 @@ class MainViewModel(val database:SavedStringDataBase) : ViewModel() {
         editor.putString("sourceLanguage", sourceLanguage.value)
         editor.apply()
     }
+
     //processing and translating input text
     fun processingInput(input:String, context: Context){
         inputText.value = input
@@ -160,7 +155,6 @@ class MainViewModel(val database:SavedStringDataBase) : ViewModel() {
 
         }
     }
-
 
     fun changeInputUI(input:String){
         if(input.length < 50){

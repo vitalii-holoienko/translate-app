@@ -72,8 +72,10 @@ import androidx.compose.ui.unit.sp
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.ViewModelProvider
 import com.example.simpletranslateapp.ui.theme.SimpleTranslateAppTheme
+import kotlinx.coroutines.DelicateCoroutinesApi
 
 
+@OptIn(DelicateCoroutinesApi::class)
 class MainActivity : ComponentActivity() {
     private lateinit var viewModel: MainViewModel
     private lateinit var mainSharedPreferences : SharedPreferences
@@ -82,7 +84,6 @@ class MainActivity : ComponentActivity() {
 
         viewModel = ViewModelProvider(this, MainViewModel.factory).get(MainViewModel::class.java)
         viewModel.startConnectivityObserve(this)
-        viewModel.getActivityContext(this)
 
         mainSharedPreferences = getSharedPreferences("main_preferences", Context.MODE_PRIVATE)
 
@@ -115,6 +116,7 @@ class MainActivity : ComponentActivity() {
 
 
 
+@DelicateCoroutinesApi
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun UI(mainViewModel: MainViewModel) {
@@ -145,7 +147,7 @@ fun Header(mainViewModel: MainViewModel){
             .padding(0.dp, 25.dp, 0.dp, 0.dp)
 
     ){
-        var context = LocalContext.current;
+        val context = LocalContext.current;
         Image(
             painter = painterResource(id = R.drawable.new_star_icon),
             contentDescription = null,

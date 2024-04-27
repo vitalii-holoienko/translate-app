@@ -133,7 +133,7 @@ fun MainContent(padding: PaddingValues, viewModel : FavouritePageViewModel){
 
             ){
                 Text(
-                    modifier = Modifier.padding(6.dp,50.dp,0.dp,6.dp),
+                    modifier = Modifier.padding(10.dp,50.dp,0.dp,6.dp),
                     text = "Saved translations",
                     fontFamily = FontFamily(Font(R.font.inter_regular)),
                     color = Color(224, 224, 224),
@@ -167,28 +167,28 @@ fun SavedString(savedString: SavedString, viewModel: FavouritePageViewModel){
         Row(){
             Column(){
                 Text(
-                    modifier = Modifier.padding(6.dp,3.dp, 6.dp, 0.dp),
-                    text=savedString.sourceText,
+                    modifier = Modifier.padding(10.dp,3.dp, 6.dp, 0.dp),
+                    text=TruncateTextIfNeeded(savedString.sourceText),
                     fontFamily = FontFamily(Font(R.font.inter_regular)),
                     color = Color(224, 224, 224),
                     fontSize = 18.sp
                 )
                 Text(
-                    modifier = Modifier.padding(6.dp,0.dp, 6.dp, 6.dp),
-                    text=savedString.translatedText,
+                    modifier = Modifier.padding(10.dp,0.dp, 6.dp, 6.dp),
+                    text=TruncateTextIfNeeded(savedString.translatedText),
                     fontFamily = FontFamily(Font(R.font.inter_regular)),
                     color = Color(124, 124, 124),
                     fontSize = 18.sp
                 )
             }
             Box(
-                modifier=Modifier.fillMaxSize().padding(6.dp)
+                modifier=Modifier.fillMaxSize().padding(10.dp)
             ){
                 Image(
-                    painter = painterResource(id = R.drawable.add_to_favourite_icon3),
+                    painter = painterResource(id = R.drawable.add_to_favourite_icon_filled1),
                     contentDescription = null,
                     modifier = Modifier
-                        .size(35.dp)
+                        .size(30.dp)
                         .scale(0.8f)
                         .align(Alignment.CenterEnd)
                         .clickable {
@@ -206,6 +206,15 @@ fun SavedString(savedString: SavedString, viewModel: FavouritePageViewModel){
     )
 
 }
+@Composable
+fun TruncateTextIfNeeded(originalText: String) : String{
+    if (originalText.length > 33) {
+        return "${originalText.take(30)}..."
+    } else {
+        return originalText
+    }
+}
+
 @Composable
 fun Footer(viewModel : FavouritePageViewModel){
 
