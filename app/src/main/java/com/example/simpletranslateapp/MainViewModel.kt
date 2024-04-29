@@ -65,10 +65,15 @@ class MainViewModel(val database:SavedStringDataBase) : ViewModel() {
     init {
         sourceLanguage.value = "Detect Automatically"
         targetLanguage.value = "English"
+        changeSourceLanguage(sourceLanguage.value!!)
+        changeTargetLanguage(targetLanguage.value!!)
         inputText.value = ""
         translatedText.value = ""
     }
 
+    fun getActivityContext(context: Context){
+        this.context = context
+    }
     //Database operations
     fun upsertSavedString(){
         GlobalScope.launch {

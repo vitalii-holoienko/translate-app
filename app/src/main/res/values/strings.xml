@@ -1,6 +1,6 @@
 <resources>
-    <string name="app_name">SimpleTranslateApp</string>
-    <string name="simpletranslate">Simple Translate</string>
+    <string name="app_name">Moira Translate</string>
+    <string name="simpletranslate">Moira Translate</string>
     <string name="title_activity_choose_language">ChooseLanguageActivity</string>
     <string name="title_activity_main2">MainActivity2</string>
     <string name="title_activity_favourite_page">FavouritePageActivity</string>

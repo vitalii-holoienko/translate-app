@@ -1,3 +1,5 @@
+@file:OptIn(DelicateCoroutinesApi::class)
+
 package com.example.simpletranslateapp
 
 
@@ -13,7 +15,6 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -89,6 +90,9 @@ class MainActivity : ComponentActivity() {
 
         WindowCompat.setDecorFitsSystemWindows(window, false)
 
+        viewModel.getActivityContext(this)
+
+        //get info from shared preferences
         val sourceLanguageFromIntent = intent.getStringExtra("sourceLanguage")
         val targetLanguageFromIntent = intent.getStringExtra("targetLanguage")
 
@@ -172,7 +176,7 @@ fun Header(mainViewModel: MainViewModel){
                 .align(alignment = Alignment.Center)
         )
         Image(
-            painter = painterResource(id = R.drawable.cup_icon1),
+            painter = painterResource(id = R.drawable.cup_icon),
             contentDescription = null,
             modifier = Modifier
                 .size(50.dp)
@@ -313,7 +317,7 @@ fun MainContent(padding: PaddingValues, mainViewModel: MainViewModel){
                         horizontalArrangement = Arrangement.End
                     ){
                         Image(
-                            painter = painterResource(id = R.drawable.copy_text2),
+                            painter = painterResource(id = R.drawable.copy_text),
                             contentDescription = null,
                             modifier = Modifier
                                 .size(50.dp)
@@ -329,7 +333,7 @@ fun MainContent(padding: PaddingValues, mainViewModel: MainViewModel){
 
                         if(!inFavourite!!){
                             Image(
-                                painter = painterResource(id = R.drawable.add_to_favourite_icon3),
+                                painter = painterResource(id = R.drawable.add_to_favourite_icon),
                                 contentDescription = null,
                                 modifier = Modifier
                                     .size(50.dp)
@@ -340,7 +344,7 @@ fun MainContent(padding: PaddingValues, mainViewModel: MainViewModel){
                             )
                         }else{
                             Image(
-                                painter = painterResource(id = R.drawable.add_to_favourite_icon_filled1),
+                                painter = painterResource(id = R.drawable.add_to_favourite_icon_filled),
                                 contentDescription = null,
                                 modifier = Modifier
                                     .size(50.dp)
@@ -404,7 +408,7 @@ fun Footer(mainViewModel: MainViewModel){
                  }
             val interactionSource = remember { MutableInteractionSource() }
                     Image(
-                        painter = painterResource(id = R.drawable.arrows1_icon),
+                        painter = painterResource(id = R.drawable.arrows_icon),
                         contentDescription = null,
                         modifier = Modifier
                             .size(50.dp)
@@ -442,7 +446,7 @@ fun Footer(mainViewModel: MainViewModel){
             Box(modifier = Modifier.padding(0.dp, 0.dp, 0.dp, 0.dp))
             {
                 Image(
-                    painter = painterResource(id = R.drawable.folder13), //163 3x
+                    painter = painterResource(id = R.drawable.folder), //163 3x
                     contentDescription = null,
                     modifier = Modifier
                         .padding(0.dp, 0.dp, 250.dp, 0.dp)
@@ -460,7 +464,7 @@ fun Footer(mainViewModel: MainViewModel){
                 )
 
                 Image(
-                    painter = painterResource(id = R.drawable.camera3_icon),
+                    painter = painterResource(id = R.drawable.camera_icon),
                     contentDescription = null,
                     modifier = Modifier
                         .padding(0.dp, 0.dp, 0.dp, 10.dp)
@@ -479,7 +483,7 @@ fun Footer(mainViewModel: MainViewModel){
 //                    contentScale = ContentScale.Crop
                 )
                 Image(
-                    painter = painterResource(id = R.drawable.clock3_icon),
+                    painter = painterResource(id = R.drawable.clock_icon),
                     contentDescription = null,
                     modifier = Modifier
                         .padding(250.dp, 0.dp, 0.dp, 0.dp)
@@ -506,7 +510,7 @@ fun InternetConnectionErrorWarning(padding: PaddingValues){
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(color = Color(99, 67, 48))
+            .background(color = Color(43, 40, 43))
             .padding(5.dp),
     ){
         Box(
@@ -514,33 +518,35 @@ fun InternetConnectionErrorWarning(padding: PaddingValues){
                 .fillMaxSize()
                 .padding(padding)
                 .clip(RoundedCornerShape(15.dp, 15.dp, 15.dp, 15.dp))
-                .background(Color(246, 228, 217))
+                .background(Color(53, 50, 53))
+                .padding(5.dp)
         ){
             Box(modifier = Modifier
                 .fillMaxWidth()
-                .height(350.dp)
+                .height(400.dp)
                 .align(Alignment.Center)
             ){
                 Column(
                     modifier = Modifier
                         .align(Alignment.Center)
                         .fillMaxWidth()
-                        .fillMaxHeight(),
+                        .fillMaxHeight()
+                        .padding(0.dp,50.dp,0.dp,0.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ){
                     Image(
-                        painter = painterResource(id = R.drawable.no_internet_icon),
+                        painter = painterResource(id = R.drawable.no_internet_warning2),
                         contentDescription = null,
                         modifier = Modifier
-                            .scale(1.8f),
+                            .scale(1.4f),
                     )
                     BasicText(
                         text = "Please check\nyour internet connection",
-                        modifier = Modifier.padding(0.dp,50.dp),
+                        modifier = Modifier.padding(0.dp,70.dp),
                         TextStyle(
                             fontSize = 25.sp,
-                            fontFamily = FontFamily(Font(R.font.inter_regular)),
-                            color = Color(99, 67, 4),
+                            fontFamily = FontFamily(Font(R.font.poppins_regular)),
+                            color = Color(224, 224, 224),
                             textAlign = TextAlign.Center
                         ))
                 }

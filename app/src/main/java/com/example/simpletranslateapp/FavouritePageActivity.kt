@@ -1,10 +1,13 @@
 package com.example.simpletranslateapp
 
+import android.R.attr.label
 import android.content.Context
 import android.content.SharedPreferences
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -13,37 +16,43 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SearchBar
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.modifier.modifierLocalConsumer
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModelProvider
+import androidx.room.util.query
 import com.example.simpletranslateapp.ui.theme.SimpleTranslateAppTheme
+import com.google.android.material.search.SearchBar
+
 
 class FavouritePageActivity : ComponentActivity() {
     private lateinit var viewModel: FavouritePageViewModel
@@ -76,6 +85,7 @@ fun UI(viewModel: FavouritePageViewModel){
         }
     )
 }
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun Header(viewModel : FavouritePageViewModel){
     Row(
@@ -86,40 +96,47 @@ fun Header(viewModel : FavouritePageViewModel){
         horizontalArrangement = Arrangement.SpaceBetween
 
     ){
-        Box(modifier = Modifier.fillMaxWidth()){
+
+
+
             Image(
                 painter = painterResource(id = R.drawable.cancel_arrow),
                 contentDescription = null,
                 modifier = Modifier
                     .size(50.dp)
                     .padding(6.dp, 5.dp, 0.dp, 6.dp)
-                    .align(alignment = Alignment.CenterStart)
                     .scale(1.1f),
             )
-            Text(
-                text = stringResource(R.string.simpletranslate),
-                color = Color(224, 224, 224),
-                fontSize = 27.sp,
-                fontFamily = FontFamily(Font(R.font.salsa_regular)),
-                textAlign = TextAlign.Center,
-                modifier = Modifier
-                    .align(alignment = Alignment.Center)
+
+            val searchText = viewModel.searchText.collectAsState()
+            TextField(
+                value = searchText.value,
+                onValueChange = {
+                    viewModel.changeSearchText(it)
+                }
             )
+
+
             Image(
                 painter = painterResource(id = R.drawable.search_icon),
                 contentDescription = null,
                 modifier = Modifier
                     .size(50.dp)
                     .padding(6.dp, 5.dp, 6.dp, 6.dp)
-                    .align(alignment = Alignment.CenterEnd)
+
                     .scale(1f),
             )
-        }
+
+
+
     }
 }
+
 @Composable
 fun MainContent(padding: PaddingValues, viewModel : FavouritePageViewModel){
     val savedStrings =  viewModel.allSavedStrings.collectAsState(initial = emptyList())
+    val filteredItemsFlow = viewModel.filteredItemsFlow.collectAsState(initial = emptyList())
+
     Box(modifier = Modifier
         .fillMaxSize()
         .background(Color(43, 40, 43))){
@@ -144,10 +161,11 @@ fun MainContent(padding: PaddingValues, viewModel : FavouritePageViewModel){
             Box()
             {
                 LazyColumn(){
-                    items(savedStrings.value){
+                    items(filteredItemsFlow.value){
                         SavedString(it, viewModel)
                     }
                 }
+
             }
         }
     }
@@ -182,10 +200,12 @@ fun SavedString(savedString: SavedString, viewModel: FavouritePageViewModel){
                 )
             }
             Box(
-                modifier=Modifier.fillMaxSize().padding(10.dp)
+                modifier= Modifier
+                    .fillMaxSize()
+                    .padding(10.dp)
             ){
                 Image(
-                    painter = painterResource(id = R.drawable.add_to_favourite_icon_filled1),
+                    painter = painterResource(id = R.drawable.add_to_favourite_icon_filled),
                     contentDescription = null,
                     modifier = Modifier
                         .size(30.dp)
