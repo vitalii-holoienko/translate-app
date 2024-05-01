@@ -47,20 +47,31 @@ class FavouritePageViewModel(val database:SavedStringDataBase) : ViewModel(){
         database.dao.deleteString(savedString)
     }
 
+    //UI
+    private var _isSearching = MutableStateFlow(false)
+    var isSearching = _isSearching.asStateFlow()
+
+    fun startTypingSearchQuery(){
+        _isSearching.value = true
+    }
+
+    fun cancelTypingSearchQuery(){
+        _isSearching.value = false
+    }
+
     //filter items by user input query
     private var _searchText = MutableStateFlow("")
     var searchText = _searchText.asStateFlow()
 
     val filteredItemsFlow: Flow<List<SavedString>> = _searchText.flatMapLatest { query ->
         allSavedStrings.map { items ->
-            items.filter { it.sourceText.contains(query, ignoreCase = true) }
+            items.filter { it.doesMatchSearchQuery(query) }
         }
     }
 
     fun changeSearchText(text:String){
         _searchText.value = text
     }
-
 
 
 

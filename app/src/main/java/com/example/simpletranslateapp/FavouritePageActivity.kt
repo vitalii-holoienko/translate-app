@@ -1,6 +1,7 @@
 package com.example.simpletranslateapp
 
 import android.R.attr.label
+import android.app.Activity
 import android.content.Context
 import android.content.SharedPreferences
 import android.os.Bundle
@@ -35,23 +36,34 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModelProvider
 import androidx.room.util.query
 import com.example.simpletranslateapp.ui.theme.SimpleTranslateAppTheme
 import com.google.android.material.search.SearchBar
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.runBlocking
 
 
 class FavouritePageActivity : ComponentActivity() {
@@ -93,11 +105,14 @@ fun Header(viewModel : FavouritePageViewModel){
             .fillMaxWidth()
             .height(50.dp)
             .background(Color(43, 40, 43)),
-        horizontalArrangement = Arrangement.SpaceBetween
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
 
     ){
-
-
+        val focusRequester = remember { FocusRequester() }
+        val context = LocalContext.current
+        // Remember the keyboard controller
+        val keyboardController = LocalSoftwareKeyboardController.current
 
             Image(
                 painter = painterResource(id = R.drawable.cancel_arrow),
@@ -105,27 +120,77 @@ fun Header(viewModel : FavouritePageViewModel){
                 modifier = Modifier
                     .size(50.dp)
                     .padding(6.dp, 5.dp, 0.dp, 6.dp)
-                    .scale(1.1f),
+                    .scale(1.1f)
             )
+
 
             val searchText = viewModel.searchText.collectAsState()
-            TextField(
-                value = searchText.value,
-                onValueChange = {
-                    viewModel.changeSearchText(it)
+            val isSearching = viewModel.isSearching.collectAsState()
+
+            if(isSearching.value){
+
+                TextField(
+                    modifier = Modifier
+                        .background(color = Color(43,40,43))
+                        .focusRequester(focusRequester),
+                    value = searchText.value,
+                    onValueChange = {
+                        viewModel.changeSearchText(it)
+                    },
+                    placeholder = { Text(text = "Search")},
+                    colors = TextFieldDefaults.
+                    textFieldColors(containerColor = Color(43,40,43),
+                        focusedTextColor = Color(244,244,244),
+                        unfocusedTextColor = Color(244,244,244),
+                        unfocusedIndicatorColor = Color(53,50,53),
+                        unfocusedPlaceholderColor = Color(123,120,123),
+                        focusedIndicatorColor = Color(53,50,53)
+                    )
+
+
+                )
+
+                LaunchedEffect(Unit) {
+                    focusRequester.requestFocus()
                 }
-            )
+
+                Image(
+                    painter = painterResource(id = R.drawable.cancel_cross_icon),
+                    contentDescription = null,
+                    modifier = Modifier
+                        .size(50.dp)
+                        .padding(6.dp, 5.dp, 6.dp, 6.dp)
+                        .clickable {
+                            viewModel.cancelTypingSearchQuery()
+                        }
+                        .scale(0.6f),
+                )
+            }else{
+                Text(
+                    text = stringResource(R.string.simpletranslate),
+                    color = Color(224, 224, 224),
+                    fontSize = 27.sp,
+                    fontFamily = FontFamily(Font(R.font.salsa_regular)),
+                    textAlign = TextAlign.Center,
 
 
-            Image(
-                painter = painterResource(id = R.drawable.search_icon),
-                contentDescription = null,
-                modifier = Modifier
-                    .size(50.dp)
-                    .padding(6.dp, 5.dp, 6.dp, 6.dp)
+                )
 
-                    .scale(1f),
-            )
+                Image(
+                    painter = painterResource(id = R.drawable.search_icon),
+                    contentDescription = null,
+                    modifier = Modifier
+                        .size(50.dp)
+                        .padding(6.dp, 5.dp, 6.dp, 6.dp)
+                        .scale(1f)
+                        .clickable {
+                            viewModel.startTypingSearchQuery()
+                        }
+                )
+
+
+            }
+
 
 
 

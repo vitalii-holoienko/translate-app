@@ -124,7 +124,15 @@ class MainActivity : ComponentActivity() {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun UI(mainViewModel: MainViewModel) {
-    val connectivityStatus by mainViewModel.connectivityObserver.observe().collectAsState(initial = ConnectivityObserver.Status.Available)
+    //check if user has internet connection
+    val c : ConnectivityObserver.Status =
+        if(mainViewModel.isInternetAvailable(LocalContext.current))
+        ConnectivityObserver.Status.Available
+        else
+        ConnectivityObserver.Status.Unavailable
+
+    val connectivityStatus by mainViewModel.connectivityObserver.observe().collectAsState(initial = c)
+
     Scaffold(
         topBar = {
             Header(mainViewModel)
@@ -254,7 +262,7 @@ fun MainContent(padding: PaddingValues, mainViewModel: MainViewModel){
                             placeholder = { Text(
                                 text = "Enter text",
                                 fontSize = textSize.sp,
-                                fontFamily = FontFamily(Font(R.font.inter_regular)),
+                                fontFamily = FontFamily(Font(R.font.poppins_regular)),
                                 color = Color(224, 224, 224),
                             ) },
                             colors = TextFieldDefaults.outlinedTextFieldColors(

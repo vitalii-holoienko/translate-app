@@ -69,6 +69,7 @@ class MainViewModel(val database:SavedStringDataBase) : ViewModel() {
         changeTargetLanguage(targetLanguage.value!!)
         inputText.value = ""
         translatedText.value = ""
+
     }
 
     fun getActivityContext(context: Context){
@@ -97,7 +98,7 @@ class MainViewModel(val database:SavedStringDataBase) : ViewModel() {
     fun startConnectivityObserve(context:Context){
         connectivityObserver = NetworkConnectivityObserver(context)
     }
-    private fun isInternetAvailable(context: Context): Boolean {
+    public fun isInternetAvailable(context: Context): Boolean {
         val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
         val networkCapabilities = connectivityManager.activeNetwork ?: return false
         val actNw = connectivityManager.getNetworkCapabilities(networkCapabilities) ?: return false
