@@ -1,8 +1,10 @@
 package com.example.simpletranslateapp
 
 import android.R.attr.label
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Context
+import android.content.Intent
 import android.content.SharedPreferences
 import android.os.Bundle
 import android.util.Log
@@ -97,6 +99,7 @@ fun UI(viewModel: FavouritePageViewModel){
         }
     )
 }
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun Header(viewModel : FavouritePageViewModel){
@@ -237,6 +240,7 @@ fun MainContent(padding: PaddingValues, viewModel : FavouritePageViewModel){
 }
 @Composable
 fun SavedString(savedString: SavedString, viewModel: FavouritePageViewModel){
+    val context = LocalContext.current
     Divider(
         color = Color(53, 50, 53)
     )
@@ -244,10 +248,18 @@ fun SavedString(savedString: SavedString, viewModel: FavouritePageViewModel){
         modifier = Modifier
             .fillMaxWidth()
             .height(65.dp)
-            .clickable {},
+            .clickable {
+                val intent = Intent(context, MainActivity::class.java).also {
+                    it.putExtra("favouriteSourceText", savedString.sourceText)
+                    it.putExtra("favouriteTranslatedText", savedString.translatedText)
+                }
+                context.startActivity(intent)
+            }, //todo
         contentAlignment = Alignment.CenterStart
     ){
-        Row(){
+        Row(
+            verticalAlignment = Alignment.CenterVertically
+        ){
             Column(){
                 Text(
                     modifier = Modifier.padding(10.dp,3.dp, 6.dp, 0.dp),

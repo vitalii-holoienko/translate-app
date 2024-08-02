@@ -50,8 +50,11 @@ class ChooseLanguageActivity : ComponentActivity() {
 
         val from = intent.getStringExtra("from").orEmpty()
         val language = intent.getStringExtra(from)
+        val inputText = intent.getStringExtra("input");
         viewModel.from.value = from
         viewModel.previousLanguage.value = language
+        viewModel.savedInputString.value = inputText
+
 
         setContent {
             SimpleTranslateAppTheme {
@@ -193,6 +196,8 @@ fun languageBox(key : String, value : String, viewModel: ChooseLanguageViewModel
                 val intent = Intent(context, MainActivity::class.java).also {
                     if (viewModel.from.value == "source") it.putExtra("sourceLanguage", key)
                     else it.putExtra("targetLanguage", key)
+
+                    it.putExtra("input", viewModel.savedInputString.value)
                 }
                 context.startActivity(intent)
             },

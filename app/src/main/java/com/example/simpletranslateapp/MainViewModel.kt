@@ -9,9 +9,13 @@ import android.net.NetworkCapabilities
 import android.os.Build
 import android.text.BoringLayout
 import android.util.Log
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.core.content.ContextCompat.startActivity
 import androidx.core.content.edit
 import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory.Companion.APPLICATION_KEY
@@ -41,20 +45,22 @@ class MainViewModel(val database:SavedStringDataBase) : ViewModel() {
     }
 
 
-    //Database
+
     var displayInternetConnectionError = MutableLiveData<Boolean>()
 
-    val inputTextSize =  MutableLiveData<Int>()
+    val inputTextSize =                  MutableLiveData<Int>()
 
-    var inputText = MutableLiveData<String>()
+    var inputText =                      MutableLiveData<String>()
 
-    var translatedText = MutableLiveData<String>()
+    var savedInputText =                 MutableLiveData<String>()
 
-    var sourceLanguage = MutableLiveData<String>()
+    var translatedText =                 MutableLiveData<String>()
 
-    var targetLanguage = MutableLiveData<String>()
+    var sourceLanguage =                 MutableLiveData<String>()
 
-    var stringInFavourite = MutableLiveData<Boolean>()
+    var targetLanguage =                 MutableLiveData<String>()
+
+    var stringInFavourite =              MutableLiveData<Boolean>()
 
     val translateText = TranslateText()
 
@@ -75,6 +81,7 @@ class MainViewModel(val database:SavedStringDataBase) : ViewModel() {
     fun getActivityContext(context: Context){
         this.context = context
     }
+
     //Database operations
     fun upsertSavedString(){
         GlobalScope.launch {
@@ -98,6 +105,7 @@ class MainViewModel(val database:SavedStringDataBase) : ViewModel() {
     fun startConnectivityObserve(context:Context){
         connectivityObserver = NetworkConnectivityObserver(context)
     }
+
     public fun isInternetAvailable(context: Context): Boolean {
         val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
         val networkCapabilities = connectivityManager.activeNetwork ?: return false
@@ -140,6 +148,7 @@ class MainViewModel(val database:SavedStringDataBase) : ViewModel() {
 
     //processing and translating input text
     fun processingInput(input:String, context: Context){
+
         inputText.value = input
         changeInputUI(input)
         GlobalScope.launch {
@@ -147,6 +156,8 @@ class MainViewModel(val database:SavedStringDataBase) : ViewModel() {
             getTranslatedText(input, context)
         }
     }
+
+
     private suspend fun getTranslatedText(input: String, context: Context) {
         try {
             if (isInternetAvailable(context)) {
@@ -161,7 +172,7 @@ class MainViewModel(val database:SavedStringDataBase) : ViewModel() {
 
         }
     }
-
+    //UI
     fun changeInputUI(input:String){
         if(input.length < 50){
             inputTextSize.value = 30;
@@ -175,5 +186,7 @@ class MainViewModel(val database:SavedStringDataBase) : ViewModel() {
             return
         }
     }
+
+
 
 }

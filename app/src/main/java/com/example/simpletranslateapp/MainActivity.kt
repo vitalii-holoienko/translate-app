@@ -7,6 +7,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import android.os.Bundle
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -41,6 +42,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
@@ -83,16 +85,21 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        viewModel = ViewModelProvider(this, MainViewModel.factory).get(MainViewModel::class.java)
-        viewModel.startConnectivityObserve(this)
+        viewModel = ViewModelProvider(this, MainViewModel.factory).get(MainViewModel::class.java) //connecting viewmodel
+        viewModel.startConnectivityObserve(this)  //observe internet state
 
         mainSharedPreferences = getSharedPreferences("main_preferences", Context.MODE_PRIVATE)
-
         WindowCompat.setDecorFitsSystemWindows(window, false)
-
         viewModel.getActivityContext(this)
 
-        //get info from shared preferences
+        //
+        if(intent.getStringExtra("favouriteSourceText") != null)
+            viewModel.savedInputText.value = intent.getStringExtra("favouriteSourceText")
+        else if(intent.getStringExtra("input")  != null)
+            viewModel.savedInputText.value = intent.getStringExtra("input")
+
+
+        //set source and target languages from preferences (if those exist)
         val sourceLanguageFromIntent = intent.getStringExtra("sourceLanguage")
         val targetLanguageFromIntent = intent.getStringExtra("targetLanguage")
 
@@ -102,8 +109,15 @@ class MainActivity : ComponentActivity() {
         if(sourceLanguageFromPrefs != "") viewModel.changeSourceLanguage(sourceLanguageFromPrefs)
         if(targetLanguageFromPrefs != "") viewModel.changeTargetLanguage(targetLanguageFromPrefs)
 
-        if(sourceLanguageFromIntent!=null) viewModel.changeSourceLanguage(sourceLanguageFromIntent)
-        if(targetLanguageFromIntent!=null) viewModel.changeTargetLanguage(targetLanguageFromIntent)
+
+        if(sourceLanguageFromIntent!=null) {
+            if(viewModel.targetLanguage.value == sourceLanguageFromIntent) viewModel.swapSourceAndTargetLanguages()
+            else viewModel.changeSourceLanguage(sourceLanguageFromIntent)
+        }
+        if(targetLanguageFromIntent!=null) {
+            if(viewModel.sourceLanguage.value == targetLanguageFromIntent) viewModel.swapSourceAndTargetLanguages()
+            else viewModel.changeTargetLanguage(targetLanguageFromIntent)
+        }
 
         setContent {
             SimpleTranslateAppTheme {
@@ -114,7 +128,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onStop() {
         super.onStop()
-        viewModel.saveDataToPrefs(mainSharedPreferences)
+        viewModel.saveDataToPrefs(mainSharedPreferences) //saving data to preferences when closing the app
     }
 }
 
@@ -195,9 +209,12 @@ fun Header(mainViewModel: MainViewModel){
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalComposeUiApi::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalComposeUiApi::class,
+    DelicateCoroutinesApi::class
+)
 @Composable
 fun MainContent(padding: PaddingValues, mainViewModel: MainViewModel){
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -212,6 +229,7 @@ fun MainContent(padding: PaddingValues, mainViewModel: MainViewModel){
                 .background(Color(53, 50, 53))
                 .verticalScroll(rememberScrollState())
         ){
+
             var textSize by remember {
                 mutableStateOf(30)
             }
@@ -224,8 +242,11 @@ fun MainContent(padding: PaddingValues, mainViewModel: MainViewModel){
                 mutableStateOf("")
             }
 
+            val context1 = LocalContext.current
+
             textSize = mainViewModel.inputTextSize.observeAsState(30).value;
             inputText = mainViewModel.inputText.observeAsState("").value
+
             Column(
                 modifier = Modifier
                     .padding(10.dp)
@@ -287,6 +308,11 @@ fun MainContent(padding: PaddingValues, mainViewModel: MainViewModel){
                     ) ,
 
                 )
+
+                LaunchedEffect(Unit) {
+                    if(mainViewModel.savedInputText.value != null)
+                        mainViewModel.processingInput(mainViewModel.savedInputText.value!!, context1)
+                }
                 translatedText = mainViewModel.translatedText.observeAsState("").value
 
                 if(translatedText.length > 0){
@@ -314,6 +340,9 @@ fun MainContent(padding: PaddingValues, mainViewModel: MainViewModel){
                             fontFamily = FontFamily(Font(R.font.inter_regular)),
                             color = Color(244, 241, 242)))
 
+
+                if(translatedText.length != 0 && inputText.length == 0)
+                    mainViewModel.translatedText.value = "" //bug fix,
 
 
                 if(translatedText.length > 0){
@@ -401,7 +430,9 @@ fun Footer(mainViewModel: MainViewModel){
                         val intent = Intent(context, ChooseLanguageActivity::class.java).also {
                             it.putExtra("source", mainViewModel.sourceLanguage.value)
                             it.putExtra("from", "source")
+                            it.putExtra("input", mainViewModel.inputText.value)
                         }
+
                         context.startActivity(intent)
                     },
                 contentAlignment = Alignment.Center
@@ -438,8 +469,12 @@ fun Footer(mainViewModel: MainViewModel){
                                     Intent(context, ChooseLanguageActivity::class.java).also {
                                         it.putExtra("target", mainViewModel.targetLanguage.value)
                                         it.putExtra("from", "target")
+                                        it.putExtra("input", mainViewModel.inputText.value)
                                     }
+
+
                                 context.startActivity(intent)
+
                             },
                         contentAlignment = Alignment.Center
                     ){ mainViewModel.targetLanguage.value?.let { Text(
@@ -539,7 +574,7 @@ fun InternetConnectionErrorWarning(padding: PaddingValues){
                         .align(Alignment.Center)
                         .fillMaxWidth()
                         .fillMaxHeight()
-                        .padding(0.dp,50.dp,0.dp,0.dp),
+                        .padding(0.dp, 50.dp, 0.dp, 0.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ){
                     Image(
