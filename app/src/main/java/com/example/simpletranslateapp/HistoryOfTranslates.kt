@@ -265,11 +265,34 @@ fun HistoryString(historyString: HistoryString, viewModel: HistoryOfTranslatesVi
                     fontSize = 18.sp
                 )
             }
+
             Box(
                 modifier= Modifier
                     .fillMaxSize()
-                    .padding(10.dp)
+
             ){
+                Column(
+                    horizontalAlignment = Alignment.End,
+                    modifier = Modifier.align(Alignment.CenterEnd) // Align Column to the right side of the screen
+                ){
+                    Text(
+                        modifier = Modifier.padding(10.dp,3.dp, 6.dp, 0.dp),
+                        text=Tools.fromTimeStampGetHM(historyString.timestamp),
+                        fontFamily = FontFamily(Font(R.font.inter_regular)),
+                        color = Color(124, 124, 124),
+                        fontSize = 15.sp
+                    )
+                    Text(
+                        modifier = Modifier.padding(10.dp,0.dp, 6.dp, 6.dp),
+                        text=Tools.fromTimeStampGetDMY(historyString.timestamp),
+                        fontFamily = FontFamily(Font(R.font.inter_regular)),
+                        color = Color(124, 124, 124),
+                        fontSize = 15.sp
+                    )
+
+                }
+
+
 
             }
 

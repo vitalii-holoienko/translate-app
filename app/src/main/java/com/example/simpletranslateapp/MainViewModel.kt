@@ -67,6 +67,7 @@ class MainViewModel(val database:DataBase) : ViewModel() {
 
     val translateText = TranslateText()
 
+    val MAX_AMOUNT_OF_LINES_IN_HISTORY_PAGE = 10
 
     @SuppressLint("StaticFieldLeak")
 
@@ -107,8 +108,16 @@ class MainViewModel(val database:DataBase) : ViewModel() {
     fun upsertHistoryString(){
         GlobalScope.launch {
             if(!database.historyStringDao.exists(inputText.value!!)){
+                val amount = database.historyStringDao.getItemCount()
+
+                if(amount >= MAX_AMOUNT_OF_LINES_IN_HISTORY_PAGE){
+                    database.historyStringDao.deleteOldestString()
+                }
+
                 val historyString = HistoryString(inputText.value!!, translatedText.value!!)
+
                 database.historyStringDao.upsertString(historyString)
+
                 Log.d("GAGA", "INSERT")
             }
 

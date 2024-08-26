@@ -36,6 +36,9 @@ class HistoryOfTranslatesViewModel(val database:DataBase) : ViewModel() {
         _isSearching.value = false
     }
 
+    fun getDataOfStringCreation(historyString: HistoryString) : String{
+        return Tools.formatTimestampToDateString(historyString.timestamp)
+    }
     //filter items by user input query
     private var _searchText = MutableStateFlow("")
     var searchText = _searchText.asStateFlow()

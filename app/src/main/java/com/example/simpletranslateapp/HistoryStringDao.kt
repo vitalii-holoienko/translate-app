@@ -21,6 +21,11 @@ interface HistoryStringDao {
     @Query("SELECT * FROM HistoryString")
     fun getAllHistoryStrings(): Flow<List<HistoryString>>
 
+    @Query("DELETE FROM HistoryString WHERE id = (SELECT id FROM HistoryString ORDER BY timestamp ASC LIMIT 1)")
+    suspend fun deleteOldestString()
+
+    @Query("SELECT COUNT(*) FROM HistoryString")
+    suspend fun getItemCount(): Int
 
     @Query("SELECT EXISTS (SELECT 1 FROM HistoryString WHERE sourceText = :sourceText)")
     fun exists(sourceText: String): Boolean

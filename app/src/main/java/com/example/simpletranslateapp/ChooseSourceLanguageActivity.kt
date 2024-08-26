@@ -48,10 +48,10 @@ class ChooseLanguageActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         val viewModel: ChooseLanguageViewModel= ViewModelProvider(this).get(ChooseLanguageViewModel::class.java)
 
-
         val from = intent.getStringExtra("from").orEmpty()
         val language = intent.getStringExtra(from)
         val inputText = intent.getStringExtra("input");
+
         viewModel.from.value = from
         viewModel.previousLanguage.value = language
         viewModel.savedInputString.value = inputText

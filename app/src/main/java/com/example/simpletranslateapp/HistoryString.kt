@@ -6,13 +6,14 @@ import androidx.room.PrimaryKey
 data class HistoryString(
     val sourceText:String,
     val translatedText:String,
+    val timestamp: Long = System.currentTimeMillis(),
     @PrimaryKey(autoGenerate = true)
     val id:Int? = null,
 ){
     fun doesMatchSearchQuery(query:String) : Boolean{
         val matchingCombinations = listOf(
-            "$sourceText",
-            "$translatedText",
+            sourceText,
+            translatedText,
         )
         return matchingCombinations.any {
             it.contains(query, ignoreCase = true)
