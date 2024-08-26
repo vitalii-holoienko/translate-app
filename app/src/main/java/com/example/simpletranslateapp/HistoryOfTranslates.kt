@@ -77,9 +77,6 @@ fun UI(viewModel : HistoryOfTranslatesViewModel){
         topBar = {
             Header(viewModel)
         },
-        bottomBar = {
-            Footer(viewModel)
-        },
         content = {padding->
             MainContent(padding, viewModel)
         }
@@ -101,8 +98,6 @@ fun Header(viewModel : HistoryOfTranslatesViewModel){
         val focusRequester = remember { FocusRequester() }
         val context = LocalContext.current
         val activity = context as? Activity
-        // Remember the keyboard controller
-        val keyboardController = LocalSoftwareKeyboardController.current
 
         Image(
             painter = painterResource(id = R.drawable.cancel_arrow),
@@ -273,7 +268,7 @@ fun HistoryString(historyString: HistoryString, viewModel: HistoryOfTranslatesVi
             ){
                 Column(
                     horizontalAlignment = Alignment.End,
-                    modifier = Modifier.align(Alignment.CenterEnd) // Align Column to the right side of the screen
+                    modifier = Modifier.align(Alignment.CenterEnd)
                 ){
                     Text(
                         modifier = Modifier.padding(10.dp,3.dp, 6.dp, 0.dp),
@@ -303,10 +298,5 @@ fun HistoryString(historyString: HistoryString, viewModel: HistoryOfTranslatesVi
     Divider(
         color = Color(53, 50, 53)
     )
-
-}
-
-@Composable
-fun Footer(viewModel : HistoryOfTranslatesViewModel){
 
 }

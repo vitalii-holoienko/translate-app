@@ -23,7 +23,6 @@ class HistoryOfTranslatesViewModel(val database:DataBase) : ViewModel() {
     }
     val allHistoryStrings = database.historyStringDao.getAllHistoryStrings()
 
-
     //UI
     private var _isSearching = MutableStateFlow(false)
     var isSearching = _isSearching.asStateFlow()
@@ -36,9 +35,6 @@ class HistoryOfTranslatesViewModel(val database:DataBase) : ViewModel() {
         _isSearching.value = false
     }
 
-    fun getDataOfStringCreation(historyString: HistoryString) : String{
-        return Tools.formatTimestampToDateString(historyString.timestamp)
-    }
     //filter items by user input query
     private var _searchText = MutableStateFlow("")
     var searchText = _searchText.asStateFlow()

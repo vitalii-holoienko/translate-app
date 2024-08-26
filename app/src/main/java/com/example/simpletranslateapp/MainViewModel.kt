@@ -135,7 +135,6 @@ class MainViewModel(val database:DataBase) : ViewModel() {
         GlobalScope.launch {
             database.historyStringDao.clearHistory()
         }
-
     }
 
 

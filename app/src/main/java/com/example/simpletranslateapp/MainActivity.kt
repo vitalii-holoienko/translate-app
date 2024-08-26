@@ -394,8 +394,6 @@ fun MainContent(padding: PaddingValues, mainViewModel: MainViewModel){
                                     Toast
                                         .makeText(context, "Translation copied", Toast.LENGTH_LONG)
                                         .show()
-
-                                    mainViewModel.clearHistory()
                                 }
                         )
                         val inFavourite = mainViewModel.stringInFavourite.observeAsState().value

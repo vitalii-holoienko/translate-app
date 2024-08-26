@@ -12,19 +12,11 @@ class Tools {
                 originalText
             }
         }
-
-        fun formatTimestampToDateString(timestamp: Long): String {
-            val date = Date(timestamp)
-            val dateTimeFormat = SimpleDateFormat("HH:mm \ndd/MM/yy", Locale.getDefault())
-            return dateTimeFormat.format(date)
-        }
-
         fun fromTimeStampGetHM(timestamp: Long) : String {
             val date = Date(timestamp)
             val dateTimeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
             return dateTimeFormat.format(date)
         }
-
         fun fromTimeStampGetDMY(timestamp: Long) : String {
             val date = Date(timestamp)
             val dateTimeFormat = SimpleDateFormat("dd/MM/yy", Locale.getDefault())

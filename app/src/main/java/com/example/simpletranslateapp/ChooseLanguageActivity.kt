@@ -46,20 +46,20 @@ import com.example.simpletranslateapp.ui.theme.SimpleTranslateAppTheme
 class ChooseLanguageActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
         val viewModel: ChooseLanguageViewModel= ViewModelProvider(this).get(ChooseLanguageViewModel::class.java)
 
         val from = intent.getStringExtra("from").orEmpty()
-        val language = intent.getStringExtra(from)
+
         val inputText = intent.getStringExtra("input");
 
         viewModel.from.value = from
-        viewModel.previousLanguage.value = language
+
         viewModel.savedInputString.value = inputText
 
 
         setContent {
             SimpleTranslateAppTheme {
-                // A surface container using the 'background' color from the theme
                 UI(viewModel)
             }
         }
@@ -73,12 +73,9 @@ fun UI(viewModel: ChooseLanguageViewModel){
         topBar = {
             Header(viewModel)
         },
-        bottomBar = {
-            Footer(viewModel)
-        },
         content = {padding->
             MainContent(padding, viewModel)
-        }
+        },
     )
 }
 
@@ -86,6 +83,7 @@ fun UI(viewModel: ChooseLanguageViewModel){
 fun Header(viewModel : ChooseLanguageViewModel){
     val context = LocalContext.current
     val activity = context as? Activity
+
     Column(){
         Row(
             modifier = Modifier
@@ -138,14 +136,12 @@ fun Header(viewModel : ChooseLanguageViewModel){
 }
 @Composable
 fun MainContent(padding: PaddingValues, viewModel : ChooseLanguageViewModel){
-
-    var recentLanguagesCounter by remember {
-        mutableStateOf(0)
-    }
     val list = remember{Languages.languages.toList()}
     var text = ""
+
     if (viewModel.from.value == "source") text = "Choose source language:"
-    else text = "Choose target language:"
+    else                                  text = "Choose target language:"
+
     Column (modifier = Modifier.verticalScroll(rememberScrollState())){
         Box(
             modifier = Modifier
@@ -201,7 +197,7 @@ fun languageBox(key : String, value : String, viewModel: ChooseLanguageViewModel
             .clickable {
                 val intent = Intent(context, MainActivity::class.java).also {
                     if (viewModel.from.value == "source") it.putExtra("sourceLanguage", key)
-                    else it.putExtra("targetLanguage", key)
+                    else                                  it.putExtra("targetLanguage", key)
 
                     it.putExtra("input", viewModel.savedInputString.value)
                 }
@@ -215,13 +211,8 @@ fun languageBox(key : String, value : String, viewModel: ChooseLanguageViewModel
             fontFamily = FontFamily(Font(R.font.inter_regular)),
             color = Color(224, 224, 224),
             fontSize = 18.sp
-
         )
     }
-
-}
-@Composable
-fun Footer(viewModel : ChooseLanguageViewModel){
 
 }
 

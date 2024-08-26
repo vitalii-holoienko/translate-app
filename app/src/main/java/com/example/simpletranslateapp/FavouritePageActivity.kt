@@ -72,12 +72,9 @@ import kotlinx.coroutines.runBlocking
 
 class FavouritePageActivity : ComponentActivity() {
     private lateinit var viewModel: FavouritePageViewModel
-    private lateinit var sharedPreferences : SharedPreferences
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         viewModel = ViewModelProvider(this, FavouritePageViewModel.factory).get(FavouritePageViewModel::class.java)
-        sharedPreferences = getSharedPreferences("favourite_preferences", Context.MODE_PRIVATE)
-
         setContent {
             SimpleTranslateAppTheme {
                 UI(viewModel)
@@ -92,9 +89,6 @@ fun UI(viewModel: FavouritePageViewModel){
     Scaffold(
         topBar = {
             Header(viewModel)
-        },
-        bottomBar = {
-
         },
         content = {padding->
             MainContent(padding, viewModel)
@@ -117,62 +111,57 @@ fun Header(viewModel : FavouritePageViewModel){
         val focusRequester = remember { FocusRequester() }
         val context = LocalContext.current
         val activity = context as? Activity
-        // Remember the keyboard controller
-        val keyboardController = LocalSoftwareKeyboardController.current
 
-            Image(
-                painter = painterResource(id = R.drawable.cancel_arrow),
-                contentDescription = null,
+        Image(
+            painter = painterResource(id = R.drawable.cancel_arrow),
+            contentDescription = null,
+            modifier = Modifier
+                .size(47.dp)
+                .padding(6.dp, 5.dp, 0.dp, 6.dp)
+                .scale(1.1f)
+                .clickable {
+                    activity?.finish()
+                }
+        )
+
+
+        val searchText = viewModel.searchText.collectAsState()
+        val isSearching = viewModel.isSearching.collectAsState()
+
+        if(isSearching.value){
+            TextField(
                 modifier = Modifier
-                    .size(47.dp)
-                    .padding(6.dp, 5.dp, 0.dp, 6.dp)
-                    .scale(1.1f)
-                    .clickable {
-                        activity?.finish()
-                    }
+                    .background(color = Color(43,40,43))
+                    .focusRequester(focusRequester),
+                value = searchText.value,
+                onValueChange = {
+                    viewModel.changeSearchText(it)
+                },
+                placeholder = { Text(text = "Search")},
+                colors = TextFieldDefaults.
+                textFieldColors(containerColor = Color(43,40,43),
+                    focusedTextColor = Color(244,244,244),
+                    unfocusedTextColor = Color(244,244,244),
+                    unfocusedIndicatorColor = Color(53,50,53),
+                    unfocusedPlaceholderColor = Color(123,120,123),
+                    focusedIndicatorColor = Color(53,50,53)
+                )
             )
 
+            LaunchedEffect(Unit) {
+                focusRequester.requestFocus()
+            }
 
-            val searchText = viewModel.searchText.collectAsState()
-            val isSearching = viewModel.isSearching.collectAsState()
-
-            if(isSearching.value){
-
-                TextField(
-                    modifier = Modifier
-                        .background(color = Color(43,40,43))
-                        .focusRequester(focusRequester),
-                    value = searchText.value,
-                    onValueChange = {
-                        viewModel.changeSearchText(it)
-                    },
-                    placeholder = { Text(text = "Search")},
-                    colors = TextFieldDefaults.
-                    textFieldColors(containerColor = Color(43,40,43),
-                        focusedTextColor = Color(244,244,244),
-                        unfocusedTextColor = Color(244,244,244),
-                        unfocusedIndicatorColor = Color(53,50,53),
-                        unfocusedPlaceholderColor = Color(123,120,123),
-                        focusedIndicatorColor = Color(53,50,53)
-                    )
-
-
-                )
-
-                LaunchedEffect(Unit) {
-                    focusRequester.requestFocus()
-                }
-
-                Image(
-                    painter = painterResource(id = R.drawable.cancel_cross_icon),
-                    contentDescription = null,
-                    modifier = Modifier
-                        .size(50.dp)
-                        .padding(6.dp, 5.dp, 6.dp, 6.dp)
-                        .clickable {
-                            viewModel.cancelTypingSearchQuery()
-                        }
-                        .scale(0.6f),
+            Image(
+                painter = painterResource(id = R.drawable.cancel_cross_icon),
+                contentDescription = null,
+                modifier = Modifier
+                    .size(50.dp)
+                    .padding(6.dp, 5.dp, 6.dp, 6.dp)
+                    .clickable {
+                        viewModel.cancelTypingSearchQuery()
+                    }
+                    .scale(0.6f),
                 )
             }else{
                 Text(
@@ -181,8 +170,6 @@ fun Header(viewModel : FavouritePageViewModel){
                     fontSize = 27.sp,
                     fontFamily = FontFamily(Font(R.font.salsa_regular)),
                     textAlign = TextAlign.Center,
-
-
                 )
 
                 Image(
@@ -210,7 +197,8 @@ fun Header(viewModel : FavouritePageViewModel){
 fun MainContent(padding: PaddingValues, viewModel : FavouritePageViewModel){
     val filteredItemsFlow = viewModel.filteredItemsFlow.collectAsState(initial = emptyList())
 
-    Box(modifier = Modifier
+    Box(
+        modifier = Modifier
         .fillMaxSize()
         .background(Color(43, 40, 43))){
         Column (){
@@ -219,7 +207,7 @@ fun MainContent(padding: PaddingValues, viewModel : FavouritePageViewModel){
                     .fillMaxWidth()
                     .background(Color(43, 40, 43))
                     .height(150.dp)
-                    .padding(padding)
+                    .padding(padding),
 
             ){
                 Text(

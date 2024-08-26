@@ -41,13 +41,13 @@ class FavouritePageViewModel(val database:DataBase) : ViewModel(){
         }
     }
     //Database
-    val allSavedStrings = database.savedStringDao.getAllSavedStrings()
+    private val allSavedStrings = database.savedStringDao.getAllSavedStrings()
 
     fun deleteSavedString(savedString:SavedString) = viewModelScope.launch{
         database.savedStringDao.deleteString(savedString)
     }
 
-    //UI
+    //Logic for text searching
     private var _isSearching = MutableStateFlow(false)
     var isSearching = _isSearching.asStateFlow()
 

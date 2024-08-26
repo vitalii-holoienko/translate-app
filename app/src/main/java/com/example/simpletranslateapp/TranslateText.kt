@@ -21,11 +21,10 @@ class TranslateText {
         val translation: Translation = translate.translate(input, sourceLanguage, targetLanguage)
         return translation.translatedText
     }
+
     public fun setSourceLanguage(language:String){
         val code = Languages.languages.get(language)
-        if(language == "Detect automatically"){
-
-        }else{
+        if(!(language == "Detect automatically")){
             sourceLanguage = Translate.TranslateOption.sourceLanguage(code)
         }
 
