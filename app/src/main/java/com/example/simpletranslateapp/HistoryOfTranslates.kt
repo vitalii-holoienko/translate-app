@@ -1,16 +1,11 @@
 package com.example.simpletranslateapp
 
-import android.R.attr.label
-import android.annotation.SuppressLint
 import android.app.Activity
-import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -24,16 +19,15 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SearchBar
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
@@ -56,28 +50,19 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModelProvider
-import androidx.navigation.NavController
-import androidx.navigation.findNavController
-import androidx.room.util.query
 import com.example.simpletranslateapp.ui.theme.SimpleTranslateAppTheme
-import com.google.android.material.search.SearchBar
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.runBlocking
 
+class HistoryOfTranslates : ComponentActivity() {
+    private lateinit var viewModel: HistoryOfTranslatesViewModel
 
-class FavouritePageActivity : ComponentActivity() {
-    private lateinit var viewModel: FavouritePageViewModel
-    private lateinit var sharedPreferences : SharedPreferences
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        viewModel = ViewModelProvider(this, FavouritePageViewModel.factory).get(FavouritePageViewModel::class.java)
-        sharedPreferences = getSharedPreferences("favourite_preferences", Context.MODE_PRIVATE)
-
+        viewModel = ViewModelProvider(this, HistoryOfTranslatesViewModel.factory).get(HistoryOfTranslatesViewModel::class.java)
         setContent {
             SimpleTranslateAppTheme {
                 UI(viewModel)
@@ -86,15 +71,14 @@ class FavouritePageActivity : ComponentActivity() {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun UI(viewModel: FavouritePageViewModel){
+fun UI(viewModel : HistoryOfTranslatesViewModel){
     Scaffold(
         topBar = {
             Header(viewModel)
         },
         bottomBar = {
-
+            Footer(viewModel)
         },
         content = {padding->
             MainContent(padding, viewModel)
@@ -104,7 +88,7 @@ fun UI(viewModel: FavouritePageViewModel){
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun Header(viewModel : FavouritePageViewModel){
+fun Header(viewModel : HistoryOfTranslatesViewModel){
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -120,85 +104,85 @@ fun Header(viewModel : FavouritePageViewModel){
         // Remember the keyboard controller
         val keyboardController = LocalSoftwareKeyboardController.current
 
+        Image(
+            painter = painterResource(id = R.drawable.cancel_arrow),
+            contentDescription = null,
+            modifier = Modifier
+                .size(47.dp)
+                .padding(6.dp, 5.dp, 0.dp, 6.dp)
+                .scale(1.1f)
+                .clickable {
+                    activity?.finish()
+                }
+        )
+
+
+        val searchText = viewModel.searchText.collectAsState()
+        val isSearching = viewModel.isSearching.collectAsState()
+
+        if(isSearching.value){
+
+            TextField(
+                modifier = Modifier
+                    .background(color = Color(43,40,43))
+                    .focusRequester(focusRequester),
+                value = searchText.value,
+                onValueChange = {
+                    viewModel.changeSearchText(it)
+                },
+                placeholder = { Text(text = "Search")},
+                colors = TextFieldDefaults.
+                textFieldColors(containerColor = Color(43,40,43),
+                    focusedTextColor = Color(244,244,244),
+                    unfocusedTextColor = Color(244,244,244),
+                    unfocusedIndicatorColor = Color(53,50,53),
+                    unfocusedPlaceholderColor = Color(123,120,123),
+                    focusedIndicatorColor = Color(53,50,53)
+                )
+
+
+            )
+
+            LaunchedEffect(Unit) {
+                focusRequester.requestFocus()
+            }
+
             Image(
-                painter = painterResource(id = R.drawable.cancel_arrow),
+                painter = painterResource(id = R.drawable.cancel_cross_icon),
                 contentDescription = null,
                 modifier = Modifier
-                    .size(47.dp)
-                    .padding(6.dp, 5.dp, 0.dp, 6.dp)
-                    .scale(1.1f)
+                    .size(50.dp)
+                    .padding(6.dp, 5.dp, 6.dp, 6.dp)
                     .clickable {
-                        activity?.finish()
+                        viewModel.cancelTypingSearchQuery()
+                    }
+                    .scale(0.6f),
+            )
+        }else{
+            Text(
+                text = stringResource(R.string.simpletranslate),
+                color = Color(224, 224, 224),
+                fontSize = 27.sp,
+                fontFamily = FontFamily(Font(R.font.salsa_regular)),
+                textAlign = TextAlign.Center,
+
+
+                )
+
+            Image(
+                painter = painterResource(id = R.drawable.search_icon),
+                contentDescription = null,
+                modifier = Modifier
+                    .size(50.dp)
+                    .padding(6.dp, 5.dp, 6.dp, 6.dp)
+                    .scale(1f)
+                    .clickable {
+                        viewModel.startTypingSearchQuery()
                     }
             )
 
 
-            val searchText = viewModel.searchText.collectAsState()
-            val isSearching = viewModel.isSearching.collectAsState()
-
-            if(isSearching.value){
-
-                TextField(
-                    modifier = Modifier
-                        .background(color = Color(43,40,43))
-                        .focusRequester(focusRequester),
-                    value = searchText.value,
-                    onValueChange = {
-                        viewModel.changeSearchText(it)
-                    },
-                    placeholder = { Text(text = "Search")},
-                    colors = TextFieldDefaults.
-                    textFieldColors(containerColor = Color(43,40,43),
-                        focusedTextColor = Color(244,244,244),
-                        unfocusedTextColor = Color(244,244,244),
-                        unfocusedIndicatorColor = Color(53,50,53),
-                        unfocusedPlaceholderColor = Color(123,120,123),
-                        focusedIndicatorColor = Color(53,50,53)
-                    )
-
-
-                )
-
-                LaunchedEffect(Unit) {
-                    focusRequester.requestFocus()
-                }
-
-                Image(
-                    painter = painterResource(id = R.drawable.cancel_cross_icon),
-                    contentDescription = null,
-                    modifier = Modifier
-                        .size(50.dp)
-                        .padding(6.dp, 5.dp, 6.dp, 6.dp)
-                        .clickable {
-                            viewModel.cancelTypingSearchQuery()
-                        }
-                        .scale(0.6f),
-                )
-            }else{
-                Text(
-                    text = stringResource(R.string.simpletranslate),
-                    color = Color(224, 224, 224),
-                    fontSize = 27.sp,
-                    fontFamily = FontFamily(Font(R.font.salsa_regular)),
-                    textAlign = TextAlign.Center,
-
-
-                )
-
-                Image(
-                    painter = painterResource(id = R.drawable.search_icon),
-                    contentDescription = null,
-                    modifier = Modifier
-                        .size(50.dp)
-                        .padding(6.dp, 5.dp, 6.dp, 6.dp)
-                        .scale(1f)
-                        .clickable {
-                            viewModel.startTypingSearchQuery()
-                        }
-                )
-
-
-            }
+        }
 
 
 
@@ -207,7 +191,7 @@ fun Header(viewModel : FavouritePageViewModel){
 }
 
 @Composable
-fun MainContent(padding: PaddingValues, viewModel : FavouritePageViewModel){
+fun MainContent(padding: PaddingValues, viewModel : HistoryOfTranslatesViewModel){
     val filteredItemsFlow = viewModel.filteredItemsFlow.collectAsState(initial = emptyList())
 
     Box(modifier = Modifier
@@ -224,7 +208,7 @@ fun MainContent(padding: PaddingValues, viewModel : FavouritePageViewModel){
             ){
                 Text(
                     modifier = Modifier.padding(10.dp,50.dp,0.dp,6.dp),
-                    text = "Saved translations",
+                    text = "History",
                     fontFamily = FontFamily(Font(R.font.inter_regular)),
                     color = Color(224, 224, 224),
                     fontSize = 28.sp,
@@ -235,7 +219,7 @@ fun MainContent(padding: PaddingValues, viewModel : FavouritePageViewModel){
             {
                 LazyColumn(){
                     items(filteredItemsFlow.value){
-                        SavedString(it, viewModel)
+                        HistoryString(it, viewModel)
                     }
                 }
 
@@ -244,7 +228,7 @@ fun MainContent(padding: PaddingValues, viewModel : FavouritePageViewModel){
     }
 }
 @Composable
-fun SavedString(savedString: SavedString, viewModel: FavouritePageViewModel){
+fun HistoryString(historyString: HistoryString, viewModel: HistoryOfTranslatesViewModel){
     val context = LocalContext.current
     Divider(
         color = Color(53, 50, 53)
@@ -255,8 +239,8 @@ fun SavedString(savedString: SavedString, viewModel: FavouritePageViewModel){
             .height(65.dp)
             .clickable {
                 val intent = Intent(context, MainActivity::class.java).also {
-                    it.putExtra("favouriteSourceText", savedString.sourceText)
-                    it.putExtra("favouriteTranslatedText", savedString.translatedText)
+                    it.putExtra("favouriteSourceText", historyString.sourceText)
+                    it.putExtra("favouriteTranslatedText", historyString.translatedText)
                 }
                 context.startActivity(intent)
             }, //todo
@@ -268,14 +252,14 @@ fun SavedString(savedString: SavedString, viewModel: FavouritePageViewModel){
             Column(){
                 Text(
                     modifier = Modifier.padding(10.dp,3.dp, 6.dp, 0.dp),
-                    text=Tools.TruncateTextIfNeeded(savedString.sourceText),
+                    text=Tools.TruncateTextIfNeeded(historyString.sourceText),
                     fontFamily = FontFamily(Font(R.font.inter_regular)),
                     color = Color(224, 224, 224),
                     fontSize = 18.sp
                 )
                 Text(
                     modifier = Modifier.padding(10.dp,0.dp, 6.dp, 6.dp),
-                    text=Tools.TruncateTextIfNeeded(savedString.translatedText),
+                    text=Tools.TruncateTextIfNeeded(historyString.translatedText),
                     fontFamily = FontFamily(Font(R.font.inter_regular)),
                     color = Color(124, 124, 124),
                     fontSize = 18.sp
@@ -286,17 +270,7 @@ fun SavedString(savedString: SavedString, viewModel: FavouritePageViewModel){
                     .fillMaxSize()
                     .padding(10.dp)
             ){
-                Image(
-                    painter = painterResource(id = R.drawable.add_to_favourite_icon_filled),
-                    contentDescription = null,
-                    modifier = Modifier
-                        .size(30.dp)
-                        .scale(0.8f)
-                        .align(Alignment.CenterEnd)
-                        .clickable {
-                            viewModel.deleteSavedString(savedString)
-                        }
-                )
+
             }
 
         }
@@ -309,5 +283,7 @@ fun SavedString(savedString: SavedString, viewModel: FavouritePageViewModel){
 
 }
 
+@Composable
+fun Footer(viewModel : HistoryOfTranslatesViewModel){
 
-
+}

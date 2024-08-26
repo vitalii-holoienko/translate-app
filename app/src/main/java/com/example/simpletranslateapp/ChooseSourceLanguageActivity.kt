@@ -1,5 +1,6 @@
 package com.example.simpletranslateapp
 
+import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -83,6 +84,8 @@ fun UI(viewModel: ChooseLanguageViewModel){
 
 @Composable
 fun Header(viewModel : ChooseLanguageViewModel){
+    val context = LocalContext.current
+    val activity = context as? Activity
     Column(){
         Row(
             modifier = Modifier
@@ -97,10 +100,13 @@ fun Header(viewModel : ChooseLanguageViewModel){
                     painter = painterResource(id = R.drawable.cancel_arrow),
                     contentDescription = null,
                     modifier = Modifier
-                        .size(50.dp)
+                        .size(47.dp)
                         .padding(6.dp, 5.dp, 0.dp, 6.dp)
                         .align(alignment = Alignment.CenterStart)
-                        .scale(1.1f),
+                        .scale(1.1f)
+                        .clickable {
+                            activity?.finish()
+                        }
                 )
                 Text(
                     text = stringResource(R.string.simpletranslate),

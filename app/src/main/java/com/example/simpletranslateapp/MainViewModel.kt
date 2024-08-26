@@ -26,12 +26,15 @@ import com.google.cloud.translate.TranslateOptions
 import com.google.cloud.translate.Translation
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.flow.count
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import java.io.IOException
 
 
 @DelicateCoroutinesApi
-class MainViewModel(val database:SavedStringDataBase) : ViewModel() {
+class MainViewModel(val database:DataBase) : ViewModel() {
 
     //ViewModel custom constructor, that allowing to use database
     companion object{
@@ -64,18 +67,21 @@ class MainViewModel(val database:SavedStringDataBase) : ViewModel() {
 
     val translateText = TranslateText()
 
+
     @SuppressLint("StaticFieldLeak")
+
     lateinit var context: Context
     lateinit var connectivityObserver: NetworkConnectivityObserver
 
     init {
         sourceLanguage.value = "Detect Automatically"
         targetLanguage.value = "English"
+
         changeSourceLanguage(sourceLanguage.value!!)
         changeTargetLanguage(targetLanguage.value!!)
+
         inputText.value = ""
         translatedText.value = ""
-
     }
 
     fun getActivityContext(context: Context){
@@ -86,19 +92,61 @@ class MainViewModel(val database:SavedStringDataBase) : ViewModel() {
     fun upsertSavedString(){
         GlobalScope.launch {
             val savedString = SavedString(inputText.value!!, translatedText.value!!)
-            database.dao.upsertString(savedString)
+            database.savedStringDao.upsertString(savedString)
             stringInFavourite.postValue(true)
         }
     }
     fun deleteSavedString(){
         GlobalScope.launch {
-            val savedString = database.dao.getBySourceText(inputText.value!!)
-            database.dao.deleteString(savedString!!)
+            val savedString = database.savedStringDao.getBySourceText(inputText.value!!)
+            database.savedStringDao.deleteString(savedString!!)
             stringInFavourite.postValue(false)
         }
     }
+
+    fun upsertHistoryString(){
+        GlobalScope.launch {
+            if(!database.historyStringDao.exists(inputText.value!!)){
+                val historyString = HistoryString(inputText.value!!, translatedText.value!!)
+                database.historyStringDao.upsertString(historyString)
+                Log.d("GAGA", "INSERT")
+            }
+
+        }
+    }
+    fun deleteHistoryString(){
+        GlobalScope.launch {
+            val historyString = database.historyStringDao.getBySourceText(inputText.value!!)
+            database.historyStringDao.deleteString(historyString!!)
+
+        }
+    }
+
+    fun clearHistory(){
+        GlobalScope.launch {
+            database.historyStringDao.clearHistory()
+        }
+
+    }
+
+
+
+    fun getAllHistoryStrings(){
+        val a = database.historyStringDao.getAllHistoryStrings()
+        Log.d("GAGA", a.toString())
+        GlobalScope.launch {
+            a.collect { list ->
+                list.forEach { string ->
+                    Log.d("GAGA", string.sourceText.toString())
+                }
+                Log.d("GAGA", list.size.toString())
+
+            }
+        }
+
+    }
     fun checkIfStringInDB() : Boolean{
-        return database.dao.exists(inputText.value!!)
+        return database.savedStringDao.exists(inputText.value!!)
     }
 
     //observing internet connection
@@ -108,8 +156,11 @@ class MainViewModel(val database:SavedStringDataBase) : ViewModel() {
 
     public fun isInternetAvailable(context: Context): Boolean {
         val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+
         val networkCapabilities = connectivityManager.activeNetwork ?: return false
+
         val actNw = connectivityManager.getNetworkCapabilities(networkCapabilities) ?: return false
+
         return actNw.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
     }
 
@@ -127,12 +178,17 @@ class MainViewModel(val database:SavedStringDataBase) : ViewModel() {
 
     fun swapSourceAndTargetLanguages(){
         if(sourceLanguage.value == "Detect automatically")return
+
         sourceLanguage.value = targetLanguage.value.also { targetLanguage.value = sourceLanguage.value }
+
         translateText.setSourceLanguage(sourceLanguage.value!!)
+
         translateText.setTargetLanguage(targetLanguage.value!!)
 
         inputText.value = translatedText.value
+
         translatedText.value = ""
+
         GlobalScope.launch {
             getTranslatedText(inputText.value!!, context)
         }
@@ -140,17 +196,22 @@ class MainViewModel(val database:SavedStringDataBase) : ViewModel() {
 
 
     public fun saveDataToPrefs(sharedPreferences: SharedPreferences){
+
         val editor = sharedPreferences.edit()
+
         editor.putString("targetLanguage", targetLanguage.value)
+
         editor.putString("sourceLanguage", sourceLanguage.value)
+
         editor.apply()
     }
 
     //processing and translating input text
     fun processingInput(input:String, context: Context){
-
         inputText.value = input
+
         changeInputUI(input)
+
         GlobalScope.launch {
             stringInFavourite.postValue(checkIfStringInDB())
             getTranslatedText(input, context)

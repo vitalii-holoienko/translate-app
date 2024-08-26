@@ -5,16 +5,17 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 @Database(
-    entities = [SavedString::class],
+    entities = [SavedString::class, HistoryString::class],
     version = 1
 )
-abstract class SavedStringDataBase : RoomDatabase(){
-    abstract val dao : SavedStringDao
+abstract class DataBase : RoomDatabase(){
+    abstract val savedStringDao : SavedStringDao
+    abstract val historyStringDao : HistoryStringDao
     companion object{
-        fun createDataBase(context: Context):SavedStringDataBase{
+        fun createDataBase(context: Context):DataBase{
             return Room.databaseBuilder(
                 context,
-                SavedStringDataBase::class.java,
+                DataBase::class.java,
                 "database.db"
             ).build()
         }

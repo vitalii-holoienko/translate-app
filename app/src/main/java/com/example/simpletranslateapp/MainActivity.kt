@@ -6,11 +6,16 @@ package com.example.simpletranslateapp
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
+import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -55,6 +60,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalClipboardManager
@@ -74,6 +82,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
 import com.example.simpletranslateapp.ui.theme.SimpleTranslateAppTheme
 import kotlinx.coroutines.DelicateCoroutinesApi
 
@@ -84,29 +96,40 @@ class MainActivity : ComponentActivity() {
     private lateinit var mainSharedPreferences : SharedPreferences
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        //Connecting viewmodel
+        viewModel = ViewModelProvider(this, MainViewModel.factory).get(MainViewModel::class.java)
 
-        viewModel = ViewModelProvider(this, MainViewModel.factory).get(MainViewModel::class.java) //connecting viewmodel
-        viewModel.startConnectivityObserve(this)  //observe internet state
+        //Start internet observe
+        viewModel.startConnectivityObserve(this)
 
         mainSharedPreferences = getSharedPreferences("main_preferences", Context.MODE_PRIVATE)
+
         WindowCompat.setDecorFitsSystemWindows(window, false)
         viewModel.getActivityContext(this)
 
-        //
+
+
+
+        //Getting data from intents
         if(intent.getStringExtra("favouriteSourceText") != null)
             viewModel.savedInputText.value = intent.getStringExtra("favouriteSourceText")
+
         else if(intent.getStringExtra("input")  != null)
             viewModel.savedInputText.value = intent.getStringExtra("input")
 
-
-        //set source and target languages from preferences (if those exist)
         val sourceLanguageFromIntent = intent.getStringExtra("sourceLanguage")
+
         val targetLanguageFromIntent = intent.getStringExtra("targetLanguage")
 
+
+
+        //set source and target languages from preferences (if those exist)
         val sourceLanguageFromPrefs = mainSharedPreferences.getString("sourceLanguage", "").orEmpty()
+
         val targetLanguageFromPrefs = mainSharedPreferences.getString("targetLanguage", "").orEmpty()
 
         if(sourceLanguageFromPrefs != "") viewModel.changeSourceLanguage(sourceLanguageFromPrefs)
+
         if(targetLanguageFromPrefs != "") viewModel.changeTargetLanguage(targetLanguageFromPrefs)
 
 
@@ -154,7 +177,7 @@ fun UI(mainViewModel: MainViewModel) {
         bottomBar = {
             Footer(mainViewModel)
         },
-        content = {padding->
+        content = { padding->
             if(connectivityStatus == ConnectivityObserver.Status.Available) MainContent(padding, mainViewModel)
             else InternetConnectionErrorWarning(padding = padding)
         }
@@ -171,7 +194,6 @@ fun Header(mainViewModel: MainViewModel){
             .background(Color(43, 40, 43))
             .height(70.dp)
             .padding(0.dp, 25.dp, 0.dp, 0.dp)
-
     ){
         val context = LocalContext.current;
         Image(
@@ -185,6 +207,7 @@ fun Header(mainViewModel: MainViewModel){
                 .clickable {
                     val intent = Intent(context, FavouritePageActivity::class.java)
                     context.startActivity(intent)
+
                 },
             contentScale = ContentScale.Crop
         )
@@ -246,20 +269,24 @@ fun MainContent(padding: PaddingValues, mainViewModel: MainViewModel){
 
             textSize = mainViewModel.inputTextSize.observeAsState(30).value;
             inputText = mainViewModel.inputText.observeAsState("").value
-
+            val keyboardController = LocalSoftwareKeyboardController.current
             Column(
                 modifier = Modifier
                     .padding(10.dp)
 
             ) {
+
                 val enabled by remember { mutableStateOf(true) }
                 val interactionSource = remember { MutableInteractionSource() }
                 val localClipboardManager = LocalClipboardManager.current
                 val focusManager = LocalFocusManager.current
+                val focusRequester = remember { FocusRequester() }
+                var hasFocus by remember { mutableStateOf(false) }
                 val keyboardController = LocalSoftwareKeyboardController.current
                 val context = LocalContext.current
 
                 BasicTextField(
+
                     value = inputText,
                     onValueChange = {
                         mainViewModel.processingInput(it, context)
@@ -270,6 +297,7 @@ fun MainContent(padding: PaddingValues, mainViewModel: MainViewModel){
                         .wrapContentHeight()
                         .animateContentSize()
                         .padding(0.dp, 12.5f.dp, 0.dp, 12.5f.dp),
+
 
                     decorationBox = { innerTextField ->
                         TextFieldDefaults.OutlinedTextFieldDecorationBox(
@@ -297,6 +325,8 @@ fun MainContent(padding: PaddingValues, mainViewModel: MainViewModel){
                     ),
                     keyboardActions = KeyboardActions(
                         onDone = {
+                            mainViewModel.upsertHistoryString()
+                            mainViewModel.getAllHistoryStrings()
                             keyboardController?.hide()
                             focusManager.clearFocus()
                         }
@@ -364,6 +394,8 @@ fun MainContent(padding: PaddingValues, mainViewModel: MainViewModel){
                                     Toast
                                         .makeText(context, "Translation copied", Toast.LENGTH_LONG)
                                         .show()
+
+                                    mainViewModel.clearHistory()
                                 }
                         )
                         val inFavourite = mainViewModel.stringInFavourite.observeAsState().value
@@ -395,6 +427,7 @@ fun MainContent(padding: PaddingValues, mainViewModel: MainViewModel){
                     }
                 }
             }
+
         }
     }
 
@@ -486,8 +519,18 @@ fun Footer(mainViewModel: MainViewModel){
                     ) } }
             }
 
+
+
             Box(modifier = Modifier.padding(0.dp, 0.dp, 0.dp, 0.dp))
             {
+                var selectedImageUri by remember{
+                    mutableStateOf<Uri?>(null)
+                }
+
+                val photoPickerLauncher = rememberLauncherForActivityResult(
+                    contract = ActivityResultContracts.PickVisualMedia(),
+                    onResult ={uri -> selectedImageUri = uri}
+                )
                 Image(
                     painter = painterResource(id = R.drawable.folder), //163 3x
                     contentDescription = null,
@@ -503,6 +546,11 @@ fun Footer(mainViewModel: MainViewModel){
                         )
                         .scale(0.8f)
                         .padding(4.dp)
+                        .clickable {
+                            photoPickerLauncher.launch(
+                                PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                            )
+                        }
 
                 )
 
@@ -540,6 +588,10 @@ fun Footer(mainViewModel: MainViewModel){
                         )
                         .padding(4.dp)
                         .scale(0.83f)
+                        .clickable {
+                            val intent = Intent(context, HistoryOfTranslates::class.java)
+                            context.startActivity(intent)
+                        }
                 )
             }
         }

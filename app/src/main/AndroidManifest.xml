@@ -7,7 +7,7 @@
 
     <application
         android:name=".App"
-        android:allowBackup="true"
+        android:allowBackup="false"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
         android:icon="@mipmap/ic_launcher"
@@ -16,6 +16,16 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.SimpleTranslateApp"
         tools:targetApi="31">
+        <activity
+            android:name=".HistoryOfTranslates"
+            android:exported="false"
+            android:label="@string/title_activity_history_of_translates"
+            android:theme="@style/Theme.SimpleTranslateApp" />
+        <activity
+            android:name=".HistoryOfTranstales"
+            android:exported="false"
+            android:label="@string/title_activity_history_of_transtales"
+            android:theme="@style/Theme.SimpleTranslateApp" />
         <activity
             android:name=".FavouritePageActivity"
             android:exported="false"
