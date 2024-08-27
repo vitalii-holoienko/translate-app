@@ -8,10 +8,8 @@ import android.content.Intent
 import android.content.SharedPreferences
 import android.net.Uri
 import android.os.Bundle
-import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
-import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.PickVisualMediaRequest
@@ -61,8 +59,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalClipboardManager
@@ -82,10 +78,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
 import com.example.simpletranslateapp.ui.theme.SimpleTranslateAppTheme
 import kotlinx.coroutines.DelicateCoroutinesApi
 
@@ -383,6 +375,17 @@ fun MainContent(padding: PaddingValues, mainViewModel: MainViewModel){
                             .height(35.dp),
                         horizontalArrangement = Arrangement.End
                     ){
+                        Image(
+                            painter = painterResource(id = R.drawable.backet_icon),
+                            contentDescription = null,
+                            modifier = Modifier
+                                .size(50.dp)
+                                .scale(0.8f)
+                                .clickable {
+                                    mainViewModel.clearAllText()
+                                }
+                        )
+
                         Image(
                             painter = painterResource(id = R.drawable.copy_text),
                             contentDescription = null,

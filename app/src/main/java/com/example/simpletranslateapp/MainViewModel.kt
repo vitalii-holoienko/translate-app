@@ -92,7 +92,7 @@ class MainViewModel(val database:DataBase) : ViewModel() {
     //Database operations
     fun upsertSavedString(){
         GlobalScope.launch {
-            val savedString = SavedString(inputText.value!!, translatedText.value!!)
+            val savedString = SavedString(inputText.value!!, translatedText.value!!, sourceLanguage.value!!, targetLanguage.value!!)
             database.savedStringDao.upsertString(savedString)
             stringInFavourite.postValue(true)
         }
@@ -114,11 +114,9 @@ class MainViewModel(val database:DataBase) : ViewModel() {
                     database.historyStringDao.deleteOldestString()
                 }
 
-                val historyString = HistoryString(inputText.value!!, translatedText.value!!)
+                val historyString = HistoryString(inputText.value!!, translatedText.value!!, sourceLanguage.value!!, targetLanguage.value!!)
 
                 database.historyStringDao.upsertString(historyString)
-
-                Log.d("GAGA", "INSERT")
             }
 
         }
@@ -226,6 +224,10 @@ class MainViewModel(val database:DataBase) : ViewModel() {
         }
     }
 
+    fun clearAllText(){
+        inputText.value = ""
+        translatedText.value = ""
+    }
 
     private suspend fun getTranslatedText(input: String, context: Context) {
         try {

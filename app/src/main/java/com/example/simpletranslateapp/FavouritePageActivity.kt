@@ -244,10 +244,12 @@ fun SavedString(savedString: SavedString, viewModel: FavouritePageViewModel){
             .clickable {
                 val intent = Intent(context, MainActivity::class.java).also {
                     it.putExtra("favouriteSourceText", savedString.sourceText)
-                    it.putExtra("favouriteTranslatedText", savedString.translatedText)
+                    it.putExtra("sourceLanguage", savedString.sourceLanguage)
+                    it.putExtra("targetLanguage", savedString.targetLanguage)
+
                 }
                 context.startActivity(intent)
-            }, //todo
+            },
         contentAlignment = Alignment.CenterStart
     ){
         Row(

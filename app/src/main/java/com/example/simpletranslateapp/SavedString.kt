@@ -6,6 +6,8 @@ import androidx.room.PrimaryKey
 data class SavedString(
     val sourceText:String,
     val translatedText:String,
+    val sourceLanguage:String,
+    val targetLanguage:String,
     @PrimaryKey(autoGenerate = true)
     val id:Int? = null,
 ){

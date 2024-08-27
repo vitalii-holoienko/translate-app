@@ -235,7 +235,8 @@ fun HistoryString(historyString: HistoryString, viewModel: HistoryOfTranslatesVi
             .clickable {
                 val intent = Intent(context, MainActivity::class.java).also {
                     it.putExtra("favouriteSourceText", historyString.sourceText)
-                    it.putExtra("favouriteTranslatedText", historyString.translatedText)
+                    it.putExtra("sourceLanguage", historyString.sourceLanguage)
+                    it.putExtra("targetLanguage", historyString.targetLanguage)
                 }
                 context.startActivity(intent)
             }, //todo
