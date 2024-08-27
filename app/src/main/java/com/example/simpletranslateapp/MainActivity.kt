@@ -270,6 +270,7 @@ fun MainContent(padding: PaddingValues, mainViewModel: MainViewModel){
 
                 val enabled by remember { mutableStateOf(true) }
                 val interactionSource = remember { MutableInteractionSource() }
+                
                 val localClipboardManager = LocalClipboardManager.current
                 val focusManager = LocalFocusManager.current
                 val focusRequester = remember { FocusRequester() }
