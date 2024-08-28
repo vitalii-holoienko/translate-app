@@ -48,4 +48,5 @@
         vestibulum. Fusce dictum libero quis erat maximus, vitae volutpat diam dignissim.
     </string>
     <string name="title_activity_history_of_translates">HistoryOfTranslates</string>
+    <string name="title_activity_camera_screen">CameraScreenActivity</string>
 </resources>

@@ -21,6 +21,9 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory.Companion.APPLICATION_KEY
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.CreationExtras
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.PermissionState
+import com.google.accompanist.permissions.rememberPermissionState
 import com.google.cloud.translate.Translate
 import com.google.cloud.translate.TranslateOptions
 import com.google.cloud.translate.Translation
@@ -68,6 +71,8 @@ class MainViewModel(val database:DataBase) : ViewModel() {
     val translateText = TranslateText()
 
     val MAX_AMOUNT_OF_LINES_IN_HISTORY_PAGE = 10
+
+
 
     @SuppressLint("StaticFieldLeak")
 
@@ -160,15 +165,6 @@ class MainViewModel(val database:DataBase) : ViewModel() {
         connectivityObserver = NetworkConnectivityObserver(context)
     }
 
-    public fun isInternetAvailable(context: Context): Boolean {
-        val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-
-        val networkCapabilities = connectivityManager.activeNetwork ?: return false
-
-        val actNw = connectivityManager.getNetworkCapabilities(networkCapabilities) ?: return false
-
-        return actNw.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
-    }
 
     //languages changing
 
@@ -229,9 +225,11 @@ class MainViewModel(val database:DataBase) : ViewModel() {
         translatedText.value = ""
     }
 
+
+
     private suspend fun getTranslatedText(input: String, context: Context) {
         try {
-            if (isInternetAvailable(context)) {
+            if (Tools.isInternetAvailable(context)) {
                 translatedText.postValue(translateText.translate(input))
                 displayInternetConnectionError.value = false;
             } else

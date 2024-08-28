@@ -3,17 +3,26 @@
 package com.example.simpletranslateapp
 
 
+import android.Manifest
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import android.net.Uri
 import android.os.Bundle
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.camera.core.CameraSelector
+import androidx.camera.core.ImageCapture
+import androidx.camera.core.ImageCaptureException
+import androidx.camera.core.Preview
+import androidx.camera.lifecycle.ProcessCameraProvider
+import androidx.camera.view.PreviewView
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -39,6 +48,7 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Button
 import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
@@ -76,10 +86,19 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.viewinterop.AndroidView
+import androidx.core.content.ContextCompat
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.example.simpletranslateapp.ui.theme.SimpleTranslateAppTheme
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.PermissionState
+import com.google.accompanist.permissions.isGranted
+import com.google.accompanist.permissions.rememberPermissionState
+import com.google.accompanist.permissions.shouldShowRationale
 import kotlinx.coroutines.DelicateCoroutinesApi
+import java.io.File
 
 
 @OptIn(DelicateCoroutinesApi::class)
@@ -155,7 +174,7 @@ class MainActivity : ComponentActivity() {
 fun UI(mainViewModel: MainViewModel) {
     //check if user has internet connection
     val c : ConnectivityObserver.Status =
-        if(mainViewModel.isInternetAvailable(LocalContext.current))
+        if(Tools.isInternetAvailable(LocalContext.current))
         ConnectivityObserver.Status.Available
         else
         ConnectivityObserver.Status.Unavailable
@@ -261,7 +280,6 @@ fun MainContent(padding: PaddingValues, mainViewModel: MainViewModel){
 
             textSize = mainViewModel.inputTextSize.observeAsState(30).value;
             inputText = mainViewModel.inputText.observeAsState("").value
-            val keyboardController = LocalSoftwareKeyboardController.current
             Column(
                 modifier = Modifier
                     .padding(10.dp)
@@ -270,11 +288,8 @@ fun MainContent(padding: PaddingValues, mainViewModel: MainViewModel){
 
                 val enabled by remember { mutableStateOf(true) }
                 val interactionSource = remember { MutableInteractionSource() }
-                
                 val localClipboardManager = LocalClipboardManager.current
                 val focusManager = LocalFocusManager.current
-                val focusRequester = remember { FocusRequester() }
-                var hasFocus by remember { mutableStateOf(false) }
                 val keyboardController = LocalSoftwareKeyboardController.current
                 val context = LocalContext.current
 
@@ -434,6 +449,7 @@ fun MainContent(padding: PaddingValues, mainViewModel: MainViewModel){
     }
 
 }
+@OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun Footer(mainViewModel: MainViewModel){
     Column(
@@ -533,6 +549,9 @@ fun Footer(mainViewModel: MainViewModel){
                     contract = ActivityResultContracts.PickVisualMedia(),
                     onResult ={uri -> selectedImageUri = uri}
                 )
+
+                val cameraPermissionState: PermissionState = rememberPermissionState(Manifest.permission.CAMERA)
+
                 Image(
                     painter = painterResource(id = R.drawable.folder), //163 3x
                     contentDescription = null,
@@ -570,11 +589,21 @@ fun Footer(mainViewModel: MainViewModel){
                             shape = RoundedCornerShape(40.dp)
                         )
                         .padding(4.dp)
-                        .scale(0.7f),
+                        .scale(0.7f)
+                        .clickable {
+
+                            if (cameraPermissionState.status.isGranted) {
+                                val intent = Intent(context, CameraScreenActivity::class.java)
+                                context.startActivity(intent)
+                            }else{
+                                cameraPermissionState.launchPermissionRequest()
+                            }
+                        }
 
 
-//                    contentScale = ContentScale.Crop
                 )
+
+
                 Image(
                     painter = painterResource(id = R.drawable.clock_icon),
                     contentDescription = null,
@@ -654,4 +683,30 @@ fun InternetConnectionErrorWarning(padding: PaddingValues){
 
     }
 }
+
+@SuppressLint("PermissionLaunchedDuringComposition")
+@OptIn(ExperimentalPermissionsApi::class)
+@Composable
+fun RequestCameraPermission(onPermissionGranted: () -> Unit) {
+    val cameraPermissionState = rememberPermissionState(android.Manifest.permission.CAMERA)
+
+    when {
+        cameraPermissionState.status.isGranted -> {
+            onPermissionGranted()
+        }
+        cameraPermissionState.status.shouldShowRationale -> {
+            // Explain why the app needs the permission
+            Text(text = "The camera is required to take pictures.")
+            Button(onClick = { cameraPermissionState.launchPermissionRequest() }) {
+                Text(text = "Grant Permission")
+            }
+        }
+        else -> {
+            // Request the permission
+            cameraPermissionState.launchPermissionRequest()
+        }
+    }
+}
+
+
 

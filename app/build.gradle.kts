@@ -66,13 +66,45 @@ android {
 
 
 dependencies {
-    implementation("androidx.appcompat:appcompat:1.6.1")
+    implementation(platform("androidx.compose:compose-bom:2023.03.00"))
+    androidTestImplementation(platform("androidx.compose:compose-bom:2023.03.00"))
+    val nav_version = "2.7.7"
+
+    // To recognize Latin script
+    implementation("com.google.mlkit:text-recognition:16.0.1")
+
+    // To recognize Chinese script
+    implementation("com.google.mlkit:text-recognition-chinese:16.0.1")
+
+    // To recognize Devanagari script
+    implementation("com.google.mlkit:text-recognition-devanagari:16.0.1")
+
+    // To recognize Japanese script
+    implementation("com.google.mlkit:text-recognition-japanese:16.0.1")
+
+    // To recognize Korean script
+    implementation("com.google.mlkit:text-recognition-korean:16.0.1")
+
+
+    // CameraX core library using the camera2 implementation
+    val camerax_version = "1.4.0-rc01"
+    implementation("androidx.camera:camera-core:${camerax_version}")
+    implementation("androidx.camera:camera-camera2:${camerax_version}")
+    implementation("androidx.camera:camera-lifecycle:${camerax_version}")
+    implementation("androidx.camera:camera-video:${camerax_version}")
+    implementation("androidx.camera:camera-view:${camerax_version}")
+    implementation("androidx.camera:camera-mlkit-vision:${camerax_version}")
+    implementation("androidx.camera:camera-extensions:${camerax_version}")
+
+
+    implementation("com.google.accompanist:accompanist-permissions:0.35.2-beta")
+    implementation("androidx.appcompat:appcompat:1.7.0")
     implementation("androidx.constraintlayout:constraintlayout:2.1.4")
     implementation("androidx.navigation:navigation-fragment-ktx:2.7.7")
     implementation("androidx.navigation:navigation-ui-ktx:2.7.7")
     implementation(platform("androidx.compose:compose-bom:2023.03.00"))
     androidTestImplementation(platform("androidx.compose:compose-bom:2023.03.00"))
-    val nav_version = "2.7.7"
+
 
     implementation("androidx.navigation:navigation-compose:$nav_version")
     implementation("androidx.core:core-ktx:1.13.1")
@@ -87,8 +119,8 @@ dependencies {
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-graphics")
     implementation("androidx.compose.ui:ui-tooling-preview")
-    implementation ("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
-    implementation ("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
+    implementation ("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1")
+    implementation ("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
     implementation("io.coil-kt:coil:2.7.0")
     implementation(platform("androidx.compose:compose-bom:2023.03.00"))
     implementation(platform("androidx.compose:compose-bom:2023.03.00"))
