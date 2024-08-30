@@ -49,4 +49,5 @@
     </string>
     <string name="title_activity_history_of_translates">HistoryOfTranslates</string>
     <string name="title_activity_camera_screen">CameraScreenActivity</string>
+    <string name="title_activity_translated_image">TranslatedImageActivity</string>
 </resources>

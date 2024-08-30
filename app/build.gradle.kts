@@ -67,6 +67,8 @@ android {
 
 dependencies {
     implementation(platform("androidx.compose:compose-bom:2023.03.00"))
+    implementation(platform("androidx.compose:compose-bom:2023.03.00"))
+    androidTestImplementation(platform("androidx.compose:compose-bom:2023.03.00"))
     androidTestImplementation(platform("androidx.compose:compose-bom:2023.03.00"))
     val nav_version = "2.7.7"
 
@@ -85,6 +87,7 @@ dependencies {
     // To recognize Korean script
     implementation("com.google.mlkit:text-recognition-korean:16.0.1")
 
+    implementation("com.github.bumptech.glide:glide:4.12.0")
 
     // CameraX core library using the camera2 implementation
     val camerax_version = "1.4.0-rc01"

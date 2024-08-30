@@ -45,42 +45,11 @@ class CameraScreenViewModel : ViewModel() {
     }
 
 
-    fun recognizeTextFromImage(image: InputImage, onTextRecognized: (List<RecognizedTextBlock>) -> Unit) {
-        val recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
-
-        recognizer.process(image)
-            .addOnSuccessListener { visionText ->
-                val textBlocks = visionText.textBlocks.map { block ->
-                    RecognizedTextBlock(
-                        text = block.text,
-                        boundingBox = block.boundingBox
-                    )
-                }
-                onTextRecognized(textBlocks)
-            }
-            .addOnFailureListener { e ->
-                Log.e("TextRecognition", "Text recognition failed: ${e.localizedMessage}")
-            }
-    }
 
 
 
-    fun translateText(text: String, targetLanguage: String, onTranslationDone: (String) -> Unit, context: Context) {
-        try {
-            if (Tools.isInternetAvailable(context)) {
-                GlobalScope.launch {
-                    translatedText.postValue(translateText.translate(text))
-                }.invokeOnCompletion {
-                    onTranslationDone(translatedText.value!!)
-                }
-            }
-        } catch (_: IOException) {
 
-        } catch (_: Exception) {
 
-        }
-
-    }
 
 
 

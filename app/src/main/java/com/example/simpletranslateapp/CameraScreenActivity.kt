@@ -1,5 +1,6 @@
 package com.example.simpletranslateapp
 
+import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.util.Log
@@ -53,11 +54,14 @@ class CameraScreenActivity : ComponentActivity() {
 @Composable
 fun Greeting(name: String, modifier: Modifier = Modifier) {
     var imageUri by remember { mutableStateOf<Uri?>(null) }
-
+    val context = LocalContext.current;
     CameraCapture(
         onImageCaptured = { uri ->
             imageUri = uri
-
+            val intent = Intent(context, TranslatedImageActivity::class.java).also {
+                it.putExtra("imageUri", imageUri.toString());
+            }
+            context.startActivity(intent)
         },
         onError = { exc ->
             Log.e("CameraX", "Error capturing image: ${exc.localizedMessage}")
