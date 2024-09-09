@@ -16,7 +16,7 @@ import java.io.IOException
 
 class CameraScreenViewModel : ViewModel() {
     data class RecognizedTextBlock(
-        val text: String,
+        var text: String,
         val boundingBox: Rect?
     )
 
@@ -35,14 +35,15 @@ class CameraScreenViewModel : ViewModel() {
 
 
     fun changeSourceLanguage(language:String){
-        translateText.setSourceLanguage(language)
+        TranslateText.setSourceLanguage(language)
         sourceLanguage.value = language
     }
 
     fun changeTargetLanguage(language:String){
-        translateText.setTargetLanguage(language)
+        TranslateText.setTargetLanguage(language)
         targetLanguage.value = language
     }
+
 
 
 

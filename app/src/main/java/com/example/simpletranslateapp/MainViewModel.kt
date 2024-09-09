@@ -169,12 +169,12 @@ class MainViewModel(val database:DataBase) : ViewModel() {
     //languages changing
 
     fun changeSourceLanguage(language:String){
-        translateText.setSourceLanguage(language)
+        TranslateText.setSourceLanguage(language)
         sourceLanguage.value = language
     }
 
     fun changeTargetLanguage(language:String){
-        translateText.setTargetLanguage(language)
+        TranslateText.setTargetLanguage(language)
         targetLanguage.value = language
     }
 
@@ -183,9 +183,9 @@ class MainViewModel(val database:DataBase) : ViewModel() {
 
         sourceLanguage.value = targetLanguage.value.also { targetLanguage.value = sourceLanguage.value }
 
-        translateText.setSourceLanguage(sourceLanguage.value!!)
+        TranslateText.setSourceLanguage(sourceLanguage.value!!)
 
-        translateText.setTargetLanguage(targetLanguage.value!!)
+        TranslateText.setTargetLanguage(targetLanguage.value!!)
 
         inputText.value = translatedText.value
 
@@ -230,7 +230,7 @@ class MainViewModel(val database:DataBase) : ViewModel() {
     private suspend fun getTranslatedText(input: String, context: Context) {
         try {
             if (Tools.isInternetAvailable(context)) {
-                translatedText.postValue(translateText.translate(input))
+                translatedText.postValue(TranslateText.translate(input))
                 displayInternetConnectionError.value = false;
             } else
                 displayInternetConnectionError.value = true;
