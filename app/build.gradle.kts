@@ -74,7 +74,7 @@ dependencies {
 
     // To recognize Latin script
     implementation("com.google.mlkit:text-recognition:16.0.1")
-
+    implementation("io.coil-kt:coil-compose:2.3.0")
     // To recognize Chinese script
     implementation("com.google.mlkit:text-recognition-chinese:16.0.1")
 
