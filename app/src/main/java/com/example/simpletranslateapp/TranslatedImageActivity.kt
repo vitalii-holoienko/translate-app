@@ -54,17 +54,19 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.launch
+import java.io.File
 import java.io.IOException
 class TranslatedImageActivity : ComponentActivity() {
     private lateinit var viewModel: TranslatedImageViewModel
+    @RequiresApi(Build.VERSION_CODES.P)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         //Connecting viewmodel
         viewModel = ViewModelProvider(this, TranslatedImageViewModel.factory).get(TranslatedImageViewModel::class.java)
+
         val uriString = intent.getStringExtra("imageUri")
         val uri = uriString?.let { Uri.parse(it) }
-
 
         setContent {
             SimpleTranslateAppTheme {
@@ -79,129 +81,120 @@ class TranslatedImageActivity : ComponentActivity() {
     }
 }
 @Composable
-fun OverlayTextOnImage(uri: Uri, translatedBlocks: List<CameraScreenViewModel.RecognizedTextBlock>, translatedImageViewModel: TranslatedImageViewModel) {
-    Log.d("GAGA", "5")
-    // Load the image using Glide or any other image loading library
+fun OverlayTextOnImage(
+    uri: Uri,
+    translatedBlocks: List<CameraScreenViewModel.RecognizedTextBlock>
+) {
     AndroidView(
         modifier = Modifier.fillMaxSize(),
         factory = { context ->
             val imageView = ImageView(context)
-            Glide.with(context)
-                .asBitmap()
-                .load(uri)
-                .into(object : CustomTarget<Bitmap>() {
-                    override fun onResourceReady(
-                        resource: Bitmap,
-                        transition: com.bumptech.glide.request.transition.Transition<in Bitmap>?
-                    ) {
-                        // Draw the text on the image
-                        val mutableBitmap = resource.copy(Bitmap.Config.ARGB_8888, true)
-                        val canvas = Canvas(mutableBitmap)
+            try{
+                Glide.with(context)
+                    .asBitmap()
+                    .load(uri)
+                    .into(object : CustomTarget<Bitmap>() {
+                        override fun onResourceReady(
+                            resource: Bitmap,
+                            transition: com.bumptech.glide.request.transition.Transition<in Bitmap>?
+                        ) {
+                            val mutableBitmap = resource.copy(Bitmap.Config.ARGB_8888, true)
+                            val canvas = Canvas(mutableBitmap)
 
-
-                        // Paint for the white box
-                        val boxPaint = Paint().apply {
-                            color = android.graphics.Color.WHITE // White color for the background box
-                            style = Paint.Style.FILL
-                        }
-
-
-                        // Paint for the text
-                        val textPaint = Paint().apply {
-                            color = android.graphics.Color.BLACK // Use a contrasting color for the text
-                            textSize = 50f
-                            typeface = Typeface.DEFAULT_BOLD
-                            textAlign = Paint.Align.LEFT
-                        }
-
-                        translatedBlocks.forEach { block ->
-                            block.boundingBox?.let { box ->
-                                // Adjust coordinates for better visibility
-                                val x = box.left.toFloat()
-                                val y = box.bottom.toFloat()
-
-                                // Calculate the size of the text
-                                val textBounds = Rect()
-                                textPaint.getTextBounds(block.text, 0, block.text.length, textBounds)
-
-                                // Calculate the position of the white box
-                                val padding = 10
-                                val boxLeft = box.left.toFloat() - padding
-                                val boxTop = box.bottom.toFloat() - textBounds.height() - padding
-                                val boxRight = box.left.toFloat() + textBounds.width() + padding
-                                val boxBottom = box.bottom.toFloat() + padding
-
-                                // Draw the white box first
-                                canvas.drawRect(boxLeft, boxTop, boxRight, boxBottom, boxPaint)
-
-                                // Draw the text on top of the box
-                                if (x >= 0 && x <= mutableBitmap.width && y >= 0 && y <= mutableBitmap.height) {
-                                    canvas.drawText(block.text, x, y, textPaint)
-                                } else {
+                            val boxPaint = Paint().apply {
+                                color = android.graphics.Color.WHITE
+                                style = Paint.Style.FILL
+                            }
+                            val textPaint = Paint().apply {
+                                color = android.graphics.Color.BLACK
+                                textSize = 50f
+                                typeface = Typeface.DEFAULT_BOLD
+                            }
+                            translatedBlocks.forEach { block ->
+                                block.boundingBox?.let { box ->
+                                    drawTextScaledToWidth(canvas, block.text, box, boxPaint, textPaint)
                                 }
                             }
+                            Log.d("TEKKEN", "4")
+                            imageView.setImageBitmap(mutableBitmap)
                         }
-                        // Set the modified Bitmap to the ImageView
-                        imageView.setImageBitmap(mutableBitmap)
-                    }
 
-                    override fun onLoadCleared(placeholder: Drawable?) {
-                        imageView.setImageDrawable(placeholder)
-                    }
-                })
+                        override fun onLoadCleared(placeholder: Drawable?) {
+                            imageView.setImageDrawable(placeholder)
+                        }
+
+                        override fun onLoadFailed(errorDrawable: Drawable?) {
+                            Log.e("OverlayTextOnImage", "Failed to load image")
+                            imageView.setImageResource(android.R.color.transparent)
+                        }
+                    })
+            }catch (e: Exception){
+                Log.d("TEKKEN", e.message.toString())
+            }
             imageView
         }
     )
 }
-@OptIn(DelicateCoroutinesApi::class)
+
+private fun drawTextScaledToWidth(
+    canvas: Canvas,
+    text: String,
+    box: Rect,
+    boxPaint: Paint,
+    textPaint: Paint
+) {
+    val lines = text.split("\n")
+    val padding = 8
+
+    var currentTop = box.top.toFloat()
+
+    lines.forEachIndexed { index, line ->
+        val textX = box.left.toFloat() + padding
+        val textY = currentTop + textPaint.textSize
+
+        // Белый прямоугольник вокруг текста
+        val backgroundTop = currentTop - padding / 2
+        val backgroundBottom = backgroundTop + textPaint.textSize + padding
+        canvas.drawRect(
+            box.left.toFloat(),
+            backgroundTop,
+            box.right.toFloat(),
+            backgroundBottom,
+            boxPaint
+        )
+
+        // Рисуем текст
+        canvas.drawText(line, textX, textY, textPaint)
+
+        // Если это не последняя строка, пересчитаем отступ
+        if (index < lines.size - 1) {
+            val nextBoxTop = box.top + ((box.height() / lines.size) * (index + 1))
+            currentTop = nextBoxTop.toFloat()
+        } else {
+            currentTop = backgroundBottom
+        }
+    }
+}
+@RequiresApi(Build.VERSION_CODES.P)
 @Composable
 fun ProcessAndDisplayImage(uri: Uri, translatedImageViewModel: TranslatedImageViewModel) {
     var translatedTextBlocks by remember { mutableStateOf<List<CameraScreenViewModel.RecognizedTextBlock>>(emptyList()) }
     var shouldOverlay by remember { mutableStateOf(false) }
     val context = LocalContext.current
-        translatedImageViewModel.recognizeTextFromImage(context, uri) { textBlocks ->
-            var translatedText = ""
-            // Perform translation asynchronously
-//                val translations = textBlocks.map { block ->
-////                        translateText(block.text){
-////                            Log.d("GAGA", it + " TRANSLATED TEXT \n")
-////                            translatedText = it
-////                            block.text = translatedText
-////                        } // Assuming translateText is a suspend function
-//                    Log.d("GAGA", "AAA")
-//                  CoroutineScope(Dispatchers.IO).launch {
-//                      Log.d("GAGA", "BBB")
-//                    translatedImageViewModel.getTranslatedText(block.text, context)
-//                      Log.d("GAGA", "CCC")
-//                      block.text = translatedImageViewModel.translatedText.value!!
-//                  }
-//
-//                    CameraScreenViewModel.RecognizedTextBlock(
-//                        text = block.text,
-//                        boundingBox = block.boundingBox
-//                    )
-//                }
-            CoroutineScope(Dispatchers.IO).launch {
-                val translations = textBlocks.map { block ->
-                    Log.d("GAGA", "AAA")
-                    CoroutineScope(Dispatchers.IO).async {
-                        Log.d("GAGA", "BBB")
-                        val translated = translatedImageViewModel.getTranslatedText(block.text, context)
-                        Log.d("GAGA", "CCC")
-                        CameraScreenViewModel.RecognizedTextBlock(
-                            text = translated!!, // Use the translated text here
-                            boundingBox = block.boundingBox
-                        )
-                    }
-                }
-                translatedTextBlocks = translations.awaitAll()
-                shouldOverlay = translations.isNotEmpty()
-            }
+    // Обработка распознавания текста
+    try{
+        translatedImageViewModel.recognizeTextFromImage(context, uri) {
+                textBlocks ->
+                translatedTextBlocks = textBlocks
+                shouldOverlay = translatedTextBlocks.isNotEmpty()
         }
-
-
+    }catch (e:Exception){
+        Log.d("TEKKEN", e.message.toString())
+    }
     if (shouldOverlay) {
-        OverlayTextOnImage(uri, translatedTextBlocks, translatedImageViewModel)
+        OverlayTextOnImage(uri, translatedTextBlocks)
     }
 }
+
+
 

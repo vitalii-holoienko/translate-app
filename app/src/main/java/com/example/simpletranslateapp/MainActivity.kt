@@ -91,6 +91,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import coil.compose.rememberAsyncImagePainter
 import com.example.simpletranslateapp.ui.theme.SimpleTranslateAppTheme
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.PermissionState
@@ -248,7 +249,6 @@ fun Header(mainViewModel: MainViewModel){
 )
 @Composable
 fun MainContent(padding: PaddingValues, mainViewModel: MainViewModel){
-
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -528,13 +528,14 @@ fun Footer(mainViewModel: MainViewModel){
 
                             },
                         contentAlignment = Alignment.Center
-                    ){ mainViewModel.targetLanguage.value?.let { Text(
-                        text = it,
+                    ){
+                        Text(
+                        text = targetLanguage,
                         color = Color(224, 224, 224),
                         fontFamily = FontFamily(Font(R.font.poppins_regular)),
                         textAlign = TextAlign.Center,
-                        fontSize = 15.sp,
-                    ) } }
+                        fontSize = 15.sp,)
+                    }
             }
 
 
@@ -545,10 +546,18 @@ fun Footer(mainViewModel: MainViewModel){
                     mutableStateOf<Uri?>(null)
                 }
 
-                val photoPickerLauncher = rememberLauncherForActivityResult(
-                    contract = ActivityResultContracts.PickVisualMedia(),
-                    onResult ={uri -> selectedImageUri = uri}
-                )
+                val launcher = rememberLauncherForActivityResult(
+                    contract = ActivityResultContracts.GetContent()
+                ) { uri: Uri? -> selectedImageUri = uri }
+
+                selectedImageUri?.let {
+                    val intent = Intent(context, TranslatedImageActivity::class.java).apply {
+                        putExtra("imageUri", selectedImageUri.toString())
+                    }
+                    context.startActivity(intent)
+                }
+
+
 
                 val cameraPermissionState: PermissionState = rememberPermissionState(Manifest.permission.CAMERA)
 
@@ -568,8 +577,8 @@ fun Footer(mainViewModel: MainViewModel){
                         .scale(0.8f)
                         .padding(4.dp)
                         .clickable {
-                            photoPickerLauncher.launch(
-                                PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                            launcher.launch(
+                                "image/*"
                             )
                         }
 
