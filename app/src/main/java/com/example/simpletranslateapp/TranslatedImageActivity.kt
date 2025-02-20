@@ -44,6 +44,7 @@ import com.bumptech.glide.Glide
 import com.bumptech.glide.request.RequestOptions
 import com.bumptech.glide.request.target.CustomTarget
 import com.example.simpletranslateapp.ui.theme.SimpleTranslateAppTheme
+import com.github.chrisbanes.photoview.PhotoView
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions
@@ -56,6 +57,7 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.launch
 import java.io.File
 import java.io.IOException
+
 class TranslatedImageActivity : ComponentActivity() {
     private lateinit var viewModel: TranslatedImageViewModel
     @RequiresApi(Build.VERSION_CODES.P)
@@ -67,6 +69,7 @@ class TranslatedImageActivity : ComponentActivity() {
 
         val uriString = intent.getStringExtra("imageUri")
         val uri = uriString?.let { Uri.parse(it) }
+
 
         setContent {
             SimpleTranslateAppTheme {
@@ -88,8 +91,8 @@ fun OverlayTextOnImage(
     AndroidView(
         modifier = Modifier.fillMaxSize(),
         factory = { context ->
-            val imageView = ImageView(context)
-            try{
+            val photoView = PhotoView(context) // Используем PhotoView вместо ImageView
+            try {
                 Glide.with(context)
                     .asBitmap()
                     .load(uri)
@@ -102,11 +105,11 @@ fun OverlayTextOnImage(
                             val canvas = Canvas(mutableBitmap)
 
                             val boxPaint = Paint().apply {
-                                color = android.graphics.Color.WHITE
+                                color = Color.WHITE
                                 style = Paint.Style.FILL
                             }
                             val textPaint = Paint().apply {
-                                color = android.graphics.Color.BLACK
+                                color = Color.BLACK
                                 textSize = 50f
                                 typeface = Typeface.DEFAULT_BOLD
                             }
@@ -115,23 +118,28 @@ fun OverlayTextOnImage(
                                     drawTextScaledToWidth(canvas, block.text, box, boxPaint, textPaint)
                                 }
                             }
+
                             Log.d("TEKKEN", "4")
-                            imageView.setImageBitmap(mutableBitmap)
+                            photoView.setImageBitmap(mutableBitmap) // Устанавливаем в PhotoView
                         }
 
                         override fun onLoadCleared(placeholder: Drawable?) {
-                            imageView.setImageDrawable(placeholder)
+                            photoView.setImageDrawable(placeholder)
                         }
 
                         override fun onLoadFailed(errorDrawable: Drawable?) {
                             Log.e("OverlayTextOnImage", "Failed to load image")
-                            imageView.setImageResource(android.R.color.transparent)
+                            photoView.setImageResource(android.R.color.transparent)
                         }
                     })
-            }catch (e: Exception){
+            } catch (e: Exception) {
                 Log.d("TEKKEN", e.message.toString())
             }
-            imageView
+            photoView.apply {
+                maximumScale = 5.0f // Максимальный зум
+                mediumScale = 2.5f
+                minimumScale = 1.0f
+            }
         }
     )
 }
@@ -183,6 +191,7 @@ fun ProcessAndDisplayImage(uri: Uri, translatedImageViewModel: TranslatedImageVi
     val context = LocalContext.current
     // Обработка распознавания текста
     try{
+
         translatedImageViewModel.recognizeTextFromImage(context, uri) {
                 textBlocks ->
                 translatedTextBlocks = textBlocks

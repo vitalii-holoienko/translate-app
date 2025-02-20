@@ -92,6 +92,7 @@ import androidx.core.view.WindowCompat
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import coil.compose.rememberAsyncImagePainter
+import com.bumptech.glide.Glide
 import com.example.simpletranslateapp.ui.theme.SimpleTranslateAppTheme
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.PermissionState
@@ -546,19 +547,20 @@ fun Footer(mainViewModel: MainViewModel){
                     mutableStateOf<Uri?>(null)
                 }
 
+
                 val launcher = rememberLauncherForActivityResult(
                     contract = ActivityResultContracts.GetContent()
                 ) { uri: Uri? -> selectedImageUri = uri }
 
                 selectedImageUri?.let {
                     val intent = Intent(context, TranslatedImageActivity::class.java).apply {
-                        putExtra("imageUri", selectedImageUri.toString())
+                        val resized = Tools.processImage(selectedImageUri!!, context)
+                        putExtra("imageUri", resized.toString())
+
                     }
+                    selectedImageUri = null
                     context.startActivity(intent)
                 }
-
-
-
                 val cameraPermissionState: PermissionState = rememberPermissionState(Manifest.permission.CAMERA)
 
                 Image(
@@ -604,7 +606,7 @@ fun Footer(mainViewModel: MainViewModel){
                             if (cameraPermissionState.status.isGranted) {
                                 val intent = Intent(context, CameraScreenActivity::class.java)
                                 context.startActivity(intent)
-                            }else{
+                            } else {
                                 cameraPermissionState.launchPermissionRequest()
                             }
                         }

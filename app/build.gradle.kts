@@ -88,6 +88,7 @@ dependencies {
     implementation("com.google.mlkit:text-recognition-korean:16.0.1")
 
     implementation("com.github.bumptech.glide:glide:4.12.0")
+    annotationProcessor("com.github.bumptech.glide:compiler:4.12.0")
 
     // CameraX core library using the camera2 implementation
     val camerax_version = "1.4.0-rc01"
@@ -98,6 +99,8 @@ dependencies {
     implementation("androidx.camera:camera-view:${camerax_version}")
     implementation("androidx.camera:camera-mlkit-vision:${camerax_version}")
     implementation("androidx.camera:camera-extensions:${camerax_version}")
+
+    implementation("com.github.chrisbanes:PhotoView:2.3.0")
 
 
     implementation("com.google.accompanist:accompanist-permissions:0.35.2-beta")

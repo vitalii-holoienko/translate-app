@@ -112,7 +112,8 @@ fun UI() {
                 onImageCaptured = { uri,  ->
                     imageUri = uri
                     val intent = Intent(context, TranslatedImageActivity::class.java).also {
-                        it.putExtra("imageUri", imageUri.toString());
+                        val resized = Tools.processImage(imageUri!!, context)
+                        it.putExtra("imageUri", resized.toString());
                     }
                     context.startActivity(intent)
                 },
