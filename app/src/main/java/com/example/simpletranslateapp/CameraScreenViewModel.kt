@@ -18,6 +18,7 @@ class CameraScreenViewModel : ViewModel() {
     data class RecognizedTextBlock(
         var text: String,
         val boundingBox: Rect?
+
     )
 
     val translateText = TranslateText()

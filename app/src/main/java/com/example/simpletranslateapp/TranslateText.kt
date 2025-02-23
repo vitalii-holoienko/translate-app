@@ -5,6 +5,8 @@ import androidx.lifecycle.MutableLiveData
 import com.google.cloud.translate.Translate
 import com.google.cloud.translate.TranslateOptions
 import com.google.cloud.translate.Translation
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 class TranslateText {
     companion object{
@@ -18,21 +20,22 @@ class TranslateText {
 
 
 
-        suspend fun translate(input:String) : String{
-            return try {
-                Log.d("GAGA", "Translating input: $input")
-                val translation: Translation = translate.translate(input, sourceLanguage, targetLanguage)
-                Log.d("GAGA", "Translation successful")
-                translation.translatedText.also {
-                    Log.d("GAGA", "EEE - Translation result: $it")
+        suspend fun translate(input: String): String {
+            return withContext(Dispatchers.IO) {
+                try {
+                    val lines = input.split("\n").map { it.trim() }
+                    val translatedLines = lines.map { line ->
+                        if (line.isNotEmpty()) translate.translate(line, sourceLanguage, targetLanguage).translatedText
+                        else ""
+                    }
+                    translatedLines.joinToString("\n")
+                } catch (e: Exception) {
+                    input
                 }
-            } catch (e: Exception) {
-                Log.e("GAGA", "Error during translation: ${e.message}", e)
-                ""  // Return an empty string or some default value if translation fails
             }
         }
 
-        public fun setSourceLanguage(language:String){
+        fun setSourceLanguage(language:String){
             val code = Languages.languages.get(language)
             if(!(language == "Detect automatically")){
                 sourceLanguage = Translate.TranslateOption.sourceLanguage(code)
@@ -40,7 +43,7 @@ class TranslateText {
 
 
         }
-        public fun setTargetLanguage(language:String){
+        fun setTargetLanguage(language:String){
             val code = Languages.languages.get(language)
             targetLanguage = Translate.TranslateOption.targetLanguage(code)
         }

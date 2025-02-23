@@ -43,6 +43,7 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.withContext
 import java.io.IOException
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
@@ -51,6 +52,7 @@ class TranslatedImageViewModel(val database:DataBase) : ViewModel() {
     private val translateText = TranslateText()
     private var textRecognizer : TextRecognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
     var translatedText =        MutableLiveData<String>()
+    var translationDone = MutableLiveData<Boolean>(false)
 
 
     private val ORIENTATIONS = SparseIntArray().apply {
@@ -73,33 +75,15 @@ class TranslatedImageViewModel(val database:DataBase) : ViewModel() {
         }
     }
 
-    suspend fun getTranslatedText(input: String, context: Context): String {
-        Log.d("TextTranslation", "Translating text...")
-        return TranslateText.translate(input).also {
-            Log.d("TextTranslation", "Translation completed")
+    fun getTranslatedText(input: String, context: Context){
+        GlobalScope.launch {
+            translatedText.postValue(TranslateText.translate(input))
+        }.invokeOnCompletion {
+            translationDone.value = true
         }
     }
 
-    @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
-    @Throws(CameraAccessException::class)
-    private fun getRotationCompensation(
-        cameraId: String,
-        windowManager: WindowManager,
-        cameraManager: CameraManager,
-        isFrontFacing: Boolean
-    ): Int {
-        val deviceRotation = windowManager.defaultDisplay.rotation
-        val rotationCompensation = ORIENTATIONS.get(deviceRotation)
-        val sensorOrientation = cameraManager
-            .getCameraCharacteristics(cameraId)
-            .get(CameraCharacteristics.SENSOR_ORIENTATION)!!
 
-        return if (isFrontFacing) {
-            (sensorOrientation + rotationCompensation) % 360
-        } else {
-            (sensorOrientation - rotationCompensation + 360) % 360
-        }
-    }
 
     @RequiresApi(Build.VERSION_CODES.P)
     fun recognizeTextFromImage(
@@ -117,7 +101,7 @@ class TranslatedImageViewModel(val database:DataBase) : ViewModel() {
 
                             CameraScreenViewModel.RecognizedTextBlock(
                                 text = block.text,
-                                boundingBox = block.boundingBox
+                                boundingBox = block.boundingBox,
                             )
                         }
                         onTextRecognized(textBlocks)
@@ -129,34 +113,5 @@ class TranslatedImageViewModel(val database:DataBase) : ViewModel() {
         } catch (e : Exception){
             Log.d("TEKKEN", e.message.toString())
         }
-    }
-
-    fun translateBlocks(
-        textBlocks: List<CameraScreenViewModel.RecognizedTextBlock>,
-        context: Context, // Контекст передается извне
-        onTranslationComplete: (List<CameraScreenViewModel.RecognizedTextBlock>) -> Unit
-    ) {
-        viewModelScope.launch {
-            val translations = textBlocks.map { block ->
-                async(Dispatchers.IO) {
-                    val translatedText = getTranslatedText(block.text, context)
-                    CameraScreenViewModel.RecognizedTextBlock(
-                        text = translatedText,
-                        boundingBox = block.boundingBox
-                    )
-                }
-            }
-            val translatedBlocks = translations.awaitAll()
-            onTranslationComplete(translatedBlocks)
-        }
-    }
-
-
-
-    // Suspend function for asynchronous task handling
-    @OptIn(ExperimentalCoroutinesApi::class)
-    private suspend fun <TResult> Task<TResult>.await(): TResult = suspendCancellableCoroutine { continuation ->
-        addOnSuccessListener { continuation.resume(it) }
-        addOnFailureListener { continuation.resumeWithException(it) }
     }
 }

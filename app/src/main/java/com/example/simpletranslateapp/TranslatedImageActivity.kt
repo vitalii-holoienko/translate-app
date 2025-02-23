@@ -91,7 +91,7 @@ fun OverlayTextOnImage(
     AndroidView(
         modifier = Modifier.fillMaxSize(),
         factory = { context ->
-            val photoView = PhotoView(context) // Используем PhotoView вместо ImageView
+            val photoView = PhotoView(context)
             try {
                 Glide.with(context)
                     .asBitmap()
@@ -104,6 +104,13 @@ fun OverlayTextOnImage(
                             val mutableBitmap = resource.copy(Bitmap.Config.ARGB_8888, true)
                             val canvas = Canvas(mutableBitmap)
 
+                            // 🔥 Добавляем серый фильтр перед рисованием текста
+                            val overlayPaint = Paint().apply {
+                                color = Color.argb(100, 150, 150, 150) // Серый цвет с прозрачностью
+                                style = Paint.Style.FILL
+                            }
+                            canvas.drawRect(0f, 0f, mutableBitmap.width.toFloat(), mutableBitmap.height.toFloat(), overlayPaint)
+
                             val boxPaint = Paint().apply {
                                 color = Color.WHITE
                                 style = Paint.Style.FILL
@@ -113,6 +120,7 @@ fun OverlayTextOnImage(
                                 textSize = 50f
                                 typeface = Typeface.DEFAULT_BOLD
                             }
+
                             translatedBlocks.forEach { block ->
                                 block.boundingBox?.let { box ->
                                     drawTextScaledToWidth(canvas, block.text, box, boxPaint, textPaint)
@@ -120,7 +128,7 @@ fun OverlayTextOnImage(
                             }
 
                             Log.d("TEKKEN", "4")
-                            photoView.setImageBitmap(mutableBitmap) // Устанавливаем в PhotoView
+                            photoView.setImageBitmap(mutableBitmap)
                         }
 
                         override fun onLoadCleared(placeholder: Drawable?) {
@@ -152,35 +160,31 @@ private fun drawTextScaledToWidth(
     textPaint: Paint
 ) {
     val lines = text.split("\n")
-    val padding = 8
+    val padding = 8  // Отступы для белого фона
 
     var currentTop = box.top.toFloat()
 
     lines.forEachIndexed { index, line ->
-        val textX = box.left.toFloat() + padding
-        val textY = currentTop + textPaint.textSize
+        val textWidth = textPaint.measureText(line) + padding * 2 // Новая ширина
+        val textHeight = textPaint.textSize + padding // Высота строки
 
-        // Белый прямоугольник вокруг текста
+        val backgroundLeft = box.left.toFloat()
         val backgroundTop = currentTop - padding / 2
-        val backgroundBottom = backgroundTop + textPaint.textSize + padding
+        val backgroundRight = backgroundLeft + textWidth
+        val backgroundBottom = backgroundTop + textHeight
+
+        // 🟩 Белый бокс теперь точно соответствует размеру текста
         canvas.drawRect(
-            box.left.toFloat(),
-            backgroundTop,
-            box.right.toFloat(),
-            backgroundBottom,
-            boxPaint
+            backgroundLeft, backgroundTop, backgroundRight, backgroundBottom, boxPaint
         )
 
-        // Рисуем текст
+        // 📝 Рисуем текст
+        val textX = backgroundLeft + padding
+        val textY = backgroundTop + textPaint.textSize
         canvas.drawText(line, textX, textY, textPaint)
 
-        // Если это не последняя строка, пересчитаем отступ
-        if (index < lines.size - 1) {
-            val nextBoxTop = box.top + ((box.height() / lines.size) * (index + 1))
-            currentTop = nextBoxTop.toFloat()
-        } else {
-            currentTop = backgroundBottom
-        }
+        // 📌 Сдвигаем `currentTop`, чтобы учесть новую высоту текста
+        currentTop = backgroundBottom + padding
     }
 }
 @RequiresApi(Build.VERSION_CODES.P)
@@ -189,17 +193,26 @@ fun ProcessAndDisplayImage(uri: Uri, translatedImageViewModel: TranslatedImageVi
     var translatedTextBlocks by remember { mutableStateOf<List<CameraScreenViewModel.RecognizedTextBlock>>(emptyList()) }
     var shouldOverlay by remember { mutableStateOf(false) }
     val context = LocalContext.current
-    // Обработка распознавания текста
-    try{
+    val coroutineScope = rememberCoroutineScope()
 
-        translatedImageViewModel.recognizeTextFromImage(context, uri) {
-                textBlocks ->
-                translatedTextBlocks = textBlocks
-                shouldOverlay = translatedTextBlocks.isNotEmpty()
+    // Обработка распознавания текста
+    LaunchedEffect(uri) {
+        try {
+            translatedImageViewModel.recognizeTextFromImage(context, uri) { textBlocks ->
+                coroutineScope.launch {
+                    val translatedBlocks = textBlocks.map { block ->
+                        val translatedText = TranslateText.translate(block.text) // Перевод текста
+                        block.copy(text = translatedText) // Создаём новый блок с переведённым текстом
+                    }
+                    translatedTextBlocks = translatedBlocks
+                    shouldOverlay = translatedTextBlocks.isNotEmpty()
+                }
+            }
+        } catch (e: Exception) {
+            Log.d("TEKKEN", e.message.toString())
         }
-    }catch (e:Exception){
-        Log.d("TEKKEN", e.message.toString())
     }
+
     if (shouldOverlay) {
         OverlayTextOnImage(uri, translatedTextBlocks)
     }
