@@ -201,8 +201,8 @@ fun ProcessAndDisplayImage(uri: Uri, translatedImageViewModel: TranslatedImageVi
             translatedImageViewModel.recognizeTextFromImage(context, uri) { textBlocks ->
                 coroutineScope.launch {
                     val translatedBlocks = textBlocks.map { block ->
-                        val translatedText = TranslateText.translate(block.text) // Перевод текста
-                        block.copy(text = translatedText) // Создаём новый блок с переведённым текстом
+                        val translatedText = TranslateText.translate(block.text)
+                        block.copy(text = translatedText)
                     }
                     translatedTextBlocks = translatedBlocks
                     shouldOverlay = translatedTextBlocks.isNotEmpty()

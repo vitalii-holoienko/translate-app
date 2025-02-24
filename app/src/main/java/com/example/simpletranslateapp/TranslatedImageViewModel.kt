@@ -74,17 +74,6 @@ class TranslatedImageViewModel(val database:DataBase) : ViewModel() {
             }
         }
     }
-
-    fun getTranslatedText(input: String, context: Context){
-        GlobalScope.launch {
-            translatedText.postValue(TranslateText.translate(input))
-        }.invokeOnCompletion {
-            translationDone.value = true
-        }
-    }
-
-
-
     @RequiresApi(Build.VERSION_CODES.P)
     fun recognizeTextFromImage(
         context: Context,
