@@ -49,22 +49,8 @@ import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
 class TranslatedImageViewModel(val database:DataBase) : ViewModel() {
-    private val translateText = TranslateText()
     private var textRecognizer : TextRecognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
-    var translatedText =        MutableLiveData<String>()
-    var translationDone = MutableLiveData<Boolean>(false)
 
-
-    private val ORIENTATIONS = SparseIntArray().apply {
-        append(Surface.ROTATION_0, 0)
-        append(Surface.ROTATION_90, 90)
-        append(Surface.ROTATION_180, 180)
-        append(Surface.ROTATION_270, 270)
-    }
-    init{
-        TranslateText.setSourceLanguage("English")
-        TranslateText.setTargetLanguage("Russian")
-    }
     companion object{
         @Suppress("UNCHECKED_CAST")
         val factory: ViewModelProvider.Factory = object: ViewModelProvider.Factory{
@@ -82,7 +68,7 @@ class TranslatedImageViewModel(val database:DataBase) : ViewModel() {
     ) {
         try{
             val source = ImageDecoder.createSource(context.contentResolver, uri)
-            var bitmap = ImageDecoder.decodeBitmap(source)
+            val bitmap = ImageDecoder.decodeBitmap(source)
             val inputImage = InputImage.fromBitmap(bitmap, 0)
             textRecognizer.process(inputImage)
                     .addOnSuccessListener {

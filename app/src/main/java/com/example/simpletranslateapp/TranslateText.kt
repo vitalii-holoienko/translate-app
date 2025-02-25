@@ -40,8 +40,6 @@ class TranslateText {
             if(!(language == "Detect automatically")){
                 sourceLanguage = Translate.TranslateOption.sourceLanguage(code)
             }
-
-
         }
         fun setTargetLanguage(language:String){
             val code = Languages.languages.get(language)

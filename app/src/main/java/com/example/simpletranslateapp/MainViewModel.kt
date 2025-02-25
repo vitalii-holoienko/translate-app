@@ -94,6 +94,7 @@ class MainViewModel(val database:DataBase) : ViewModel() {
     lateinit var connectivityObserver: NetworkConnectivityObserver
 
     init {
+        Log.d("TEKKEN", "INIT")
         sourceLanguage.value = "Detect Automatically"
         targetLanguage.value = "English"
 
@@ -183,13 +184,14 @@ class MainViewModel(val database:DataBase) : ViewModel() {
     //languages changing
 
     fun changeSourceLanguage(language:String){
-        TranslateText.setSourceLanguage(language)
         sourceLanguage.value = language
+        TranslateText.setSourceLanguage(language)
+
     }
 
     fun changeTargetLanguage(language:String){
-        TranslateText.setTargetLanguage(language)
         targetLanguage.value = language
+        TranslateText.setTargetLanguage(language)
     }
 
     fun swapSourceAndTargetLanguages(){

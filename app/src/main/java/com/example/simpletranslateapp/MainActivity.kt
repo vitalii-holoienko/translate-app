@@ -483,6 +483,7 @@ fun Footer(mainViewModel: MainViewModel){
                             it.putExtra("source", mainViewModel.sourceLanguage.value)
                             it.putExtra("from", "source")
                             it.putExtra("input", mainViewModel.inputText.value)
+                            it.putExtra("camera", false)
                         }
 
                         context.startActivity(intent)
@@ -522,6 +523,7 @@ fun Footer(mainViewModel: MainViewModel){
                                         it.putExtra("target", mainViewModel.targetLanguage.value)
                                         it.putExtra("from", "target")
                                         it.putExtra("input", mainViewModel.inputText.value)
+                                        it.putExtra("camera", false)
                                     }
 
 
@@ -556,6 +558,7 @@ fun Footer(mainViewModel: MainViewModel){
                     val intent = Intent(context, TranslatedImageActivity::class.java).apply {
                         val resized = Tools.processImage(selectedImageUri!!, context)
                         putExtra("imageUri", resized.toString())
+
 
                     }
                     selectedImageUri = null
@@ -604,7 +607,10 @@ fun Footer(mainViewModel: MainViewModel){
                         .clickable {
 
                             if (cameraPermissionState.status.isGranted) {
-                                val intent = Intent(context, CameraScreenActivity::class.java)
+                                val intent = Intent(context, CameraScreenActivity::class.java).apply {
+                                    putExtra("sourceLanguage", sourceLanguage)
+                                    putExtra("targetLanguage", targetLanguage)
+                                }
                                 context.startActivity(intent)
                             } else {
                                 cameraPermissionState.launchPermissionRequest()

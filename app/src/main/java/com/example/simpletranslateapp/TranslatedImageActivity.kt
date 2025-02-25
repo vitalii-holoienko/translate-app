@@ -64,16 +64,16 @@ class TranslatedImageActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        //Connecting viewmodel
         viewModel = ViewModelProvider(this, TranslatedImageViewModel.factory).get(TranslatedImageViewModel::class.java)
 
         val uriString = intent.getStringExtra("imageUri")
         val uri = uriString?.let { Uri.parse(it) }
 
 
+
+
         setContent {
             SimpleTranslateAppTheme {
-                // A surface container using the 'background' color from the theme
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                 ) {
@@ -104,7 +104,7 @@ fun OverlayTextOnImage(
                             val mutableBitmap = resource.copy(Bitmap.Config.ARGB_8888, true)
                             val canvas = Canvas(mutableBitmap)
 
-                            // 🔥 Добавляем серый фильтр перед рисованием текста
+                            // 🔥 gray filter
                             val overlayPaint = Paint().apply {
                                 color = Color.argb(100, 150, 150, 150) // Серый цвет с прозрачностью
                                 style = Paint.Style.FILL
@@ -126,8 +126,6 @@ fun OverlayTextOnImage(
                                     drawTextScaledToWidth(canvas, block.text, box, boxPaint, textPaint)
                                 }
                             }
-
-                            Log.d("TEKKEN", "4")
                             photoView.setImageBitmap(mutableBitmap)
                         }
 
@@ -144,7 +142,7 @@ fun OverlayTextOnImage(
                 Log.d("TEKKEN", e.message.toString())
             }
             photoView.apply {
-                maximumScale = 5.0f // Максимальный зум
+                maximumScale = 5.0f
                 mediumScale = 2.5f
                 minimumScale = 1.0f
             }
@@ -160,25 +158,22 @@ private fun drawTextScaledToWidth(
     textPaint: Paint
 ) {
     val lines = text.split("\n")
-    val padding = 8  // Отступы для белого фона
+    val padding = 8
 
     var currentTop = box.top.toFloat()
 
     lines.forEachIndexed { index, line ->
-        val textWidth = textPaint.measureText(line) + padding * 2 // Новая ширина
-        val textHeight = textPaint.textSize + padding // Высота строки
-
+        val textWidth = textPaint.measureText(line) + padding * 2
+        val textHeight = textPaint.textSize + padding
         val backgroundLeft = box.left.toFloat()
         val backgroundTop = currentTop - padding / 2
         val backgroundRight = backgroundLeft + textWidth
         val backgroundBottom = backgroundTop + textHeight
 
-        // 🟩 Белый бокс теперь точно соответствует размеру текста
         canvas.drawRect(
             backgroundLeft, backgroundTop, backgroundRight, backgroundBottom, boxPaint
         )
 
-        // 📝 Рисуем текст
         val textX = backgroundLeft + padding
         val textY = backgroundTop + textPaint.textSize
         canvas.drawText(line, textX, textY, textPaint)
@@ -195,7 +190,6 @@ fun ProcessAndDisplayImage(uri: Uri, translatedImageViewModel: TranslatedImageVi
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
 
-    // Обработка распознавания текста
     LaunchedEffect(uri) {
         try {
             translatedImageViewModel.recognizeTextFromImage(context, uri) { textBlocks ->

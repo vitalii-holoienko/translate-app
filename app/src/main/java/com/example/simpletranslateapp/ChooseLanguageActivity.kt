@@ -3,6 +3,7 @@ package com.example.simpletranslateapp
 import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
@@ -51,7 +52,11 @@ class ChooseLanguageActivity : ComponentActivity() {
 
         val from = intent.getStringExtra("from").orEmpty()
 
-        val inputText = intent.getStringExtra("input");
+        var inputText = ""
+        if(intent.getStringExtra("input") != null){
+            inputText = intent.getStringExtra("input")!!
+        }
+        viewModel.camera.value = intent.getBooleanExtra("camera", false)
 
         viewModel.from.value = from
 
@@ -195,13 +200,23 @@ fun languageBox(key : String, value : String, viewModel: ChooseLanguageViewModel
             .fillMaxWidth()
             .height(60.dp)
             .clickable {
-                val intent = Intent(context, MainActivity::class.java).also {
-                    if (viewModel.from.value == "source") it.putExtra("sourceLanguage", key)
-                    else                                  it.putExtra("targetLanguage", key)
+                if(viewModel.camera.value == false){
+                    val intent = Intent(context, MainActivity::class.java).also {
+                        if (viewModel.from.value == "source") it.putExtra("sourceLanguage", key)
+                        else                                  it.putExtra("targetLanguage", key)
 
-                    it.putExtra("input", viewModel.savedInputString.value)
+                        it.putExtra("input", viewModel.savedInputString.value)
+                    }
+                    context.startActivity(intent)
+                }else{
+                    val intent = Intent(context, CameraScreenActivity::class.java).also {
+                        Log.d("TEKKEN", "FROM CLA")
+                        if (viewModel.from.value == "source") it.putExtra("choseSourceLanguage", key)
+                        else                                  it.putExtra("choseTargetLanguage", key)
+                    }
+                    context.startActivity(intent)
                 }
-                context.startActivity(intent)
+
             },
         contentAlignment = Alignment.CenterStart
     ){

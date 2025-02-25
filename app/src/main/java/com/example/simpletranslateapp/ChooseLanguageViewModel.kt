@@ -6,4 +6,5 @@ import androidx.lifecycle.ViewModel
 class ChooseLanguageViewModel : ViewModel() {
     var from = MutableLiveData<String>()
     var savedInputString = MutableLiveData<String>()
+    var camera = MutableLiveData<Boolean>()
 }

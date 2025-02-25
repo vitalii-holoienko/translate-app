@@ -1,7 +1,9 @@
 package com.example.simpletranslateapp
 
 import android.app.Activity
+import android.content.Context
 import android.content.Intent
+import android.content.SharedPreferences
 import android.media.ExifInterface
 import android.net.Uri
 import android.os.Bundle
@@ -49,6 +51,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -73,26 +76,63 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.simpletranslateapp.ui.theme.SimpleTranslateAppTheme
 import java.io.File
 
 class CameraScreenActivity : ComponentActivity() {
+    private lateinit var viewModel: CameraScreenViewModel
+    private lateinit var mainSharedPreferences : SharedPreferences
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        viewModel = ViewModelProvider(this, CameraScreenViewModel.factory).get(CameraScreenViewModel::class.java)
+        mainSharedPreferences = getSharedPreferences("main_preferences", Context.MODE_PRIVATE)
+
+        val sourceLanguageFromPrefs = mainSharedPreferences.getString("sourceLanguage", "").orEmpty()
+        val targetLanguageFromPrefs = mainSharedPreferences.getString("targetLanguage", "").orEmpty()
+
+        if(sourceLanguageFromPrefs != "" && targetLanguageFromPrefs != ""){
+            viewModel.changeSourceLanguage(sourceLanguageFromPrefs)
+            viewModel.changeTargetLanguage(targetLanguageFromPrefs)
+        }
+
+
+        if(intent.getStringExtra("sourceLanguage") != null && intent.getStringExtra("targetLanguage") != null){
+            Log.d("TEKKEN", "FROM MAIN")
+            viewModel.changeSourceLanguage(intent.getStringExtra("sourceLanguage")!!)
+            viewModel.changeTargetLanguage(intent.getStringExtra("targetLanguage")!!)
+        }
+
+        val choseSourceLanguage = intent.getStringExtra("choseSourceLanguage")
+        val choseTargetLanguage = intent.getStringExtra("choseTargetLanguage")
+
+        if (choseSourceLanguage != null){
+            viewModel.changeSourceLanguage(choseSourceLanguage)
+        }
+        if (choseTargetLanguage != null){
+
+            viewModel.changeTargetLanguage(choseTargetLanguage)
+        }
+
+
+
         setContent {
             SimpleTranslateAppTheme {
-                // A surface container using the 'background' color from the theme
-
-                UI()
-
+                UI(viewModel)
             }
         }
+    }
+
+    override fun onStop() {
+        super.onStop()
+        viewModel.saveDataToPrefs(mainSharedPreferences)
     }
 }
 
 @Composable
-fun UI() {
+fun UI(viewModel: CameraScreenViewModel) {
     var imageUri by remember { mutableStateOf<Uri?>(null) }
     val context = LocalContext.current;
     val imageCapture: ImageCapture = remember {
@@ -103,9 +143,7 @@ fun UI() {
             Header()
         },
         bottomBar = {
-            Footer(
-
-            )
+            Footer(viewModel)
         },
         content = {padding->
             CameraCapture(
@@ -165,15 +203,7 @@ fun Header(){
                     modifier = Modifier
                         .align(alignment = Alignment.Center)
                 )
-                Image(
-                    painter = painterResource(id = R.drawable.search_icon),
-                    contentDescription = null,
-                    modifier = Modifier
-                        .size(50.dp)
-                        .padding(6.dp, 5.dp, 6.dp, 6.dp)
-                        .align(alignment = Alignment.CenterEnd)
-                        .scale(1f),
-                )
+                
 
             }
 
@@ -286,9 +316,12 @@ fun CameraCapture(
    }
 }
 @Composable
-fun Footer(
+fun Footer(viewModel: CameraScreenViewModel
 ){
     val context = LocalContext.current
+    val sourceLanguage by viewModel.sourceLanguage.observeAsState()
+    val targetLanguage by viewModel.targetLanguage.observeAsState()
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -304,18 +337,18 @@ fun Footer(
                     .clip(RoundedCornerShape(10.dp))
                     .background(Color(53, 50, 53))
                     .clickable {
-//                    val intent = Intent(context, ChooseLanguageActivity::class.java).also {
-//                        it.putExtra("source", mainViewModel.sourceLanguage.value)
-//                        it.putExtra("from", "source")
-//                        it.putExtra("input", mainViewModel.inputText.value)
-//                    }
-//
-//                    context.startActivity(intent)
+                        val intent = Intent(context, ChooseLanguageActivity::class.java).also {
+                            it.putExtra("source", viewModel.sourceLanguage.value)
+                            it.putExtra("from", "source")
+                            it.putExtra("camera", true)
+                        }
+
+                        context.startActivity(intent)
                     },
                 contentAlignment = Alignment.Center
             ){
                 Text(
-                    text = "sourceLanguage",
+                    text = sourceLanguage!!,
                     color = Color(224, 224, 224),
                     fontFamily = FontFamily(Font(R.font.poppins_regular)),
                     textAlign = TextAlign.Center,
@@ -329,11 +362,10 @@ fun Footer(
                 modifier = Modifier
                     .size(50.dp)
                     .scale(2f)
-//                .clickable(indication = null, onClick = {
-//                    mainViewModel.swapSourceAndTargetLanguages()
-//                }, interactionSource = interactionSource)
+                    .clickable {
+                        viewModel.swapSourceAndTargetLanguages()
+                    })
 
-            )
 
             Box(
                 modifier = Modifier
@@ -342,20 +374,17 @@ fun Footer(
                     .clip(RoundedCornerShape(10.dp))
                     .background(Color(53, 50, 53))
                     .clickable {
-//                    val intent =
-//                        Intent(context, ChooseLanguageActivity::class.java).also {
-//                            it.putExtra("target", mainViewModel.targetLanguage.value)
-//                            it.putExtra("from", "target")
-//                            it.putExtra("input", mainViewModel.inputText.value)
-//                        }
-//
-//
-//                    context.startActivity(intent)
+                        val intent = Intent(context, ChooseLanguageActivity::class.java).also {
+                            it.putExtra("target", viewModel.targetLanguage.value)
+                            it.putExtra("from", "target")
+                            it.putExtra("camera", true)
+                        }
+                        context.startActivity(intent)
 
                     },
                 contentAlignment = Alignment.Center
             ){ Text(
-                text = "it",
+                text = targetLanguage!!,
                 color = Color(224, 224, 224),
                 fontFamily = FontFamily(Font(R.font.poppins_regular)),
                 textAlign = TextAlign.Center,
