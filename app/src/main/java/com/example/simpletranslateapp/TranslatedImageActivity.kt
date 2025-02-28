@@ -6,7 +6,7 @@ import android.content.Context.CAMERA_SERVICE
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Canvas
-import android.graphics.Color
+import android.graphics.Color as LegacyColor
 import android.graphics.Paint
 import android.graphics.Rect
 import android.graphics.Typeface
@@ -25,7 +25,10 @@ import android.widget.ImageView
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.annotation.RequiresApi
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -35,7 +38,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.MutableLiveData
@@ -75,7 +81,7 @@ class TranslatedImageActivity : ComponentActivity() {
         setContent {
             SimpleTranslateAppTheme {
                 Surface(
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = Modifier.fillMaxSize().background(Color(43, 40, 43)),
                 ) {
                     ProcessAndDisplayImage(uri!!, viewModel)
                 }
@@ -89,7 +95,7 @@ fun OverlayTextOnImage(
     translatedBlocks: List<CameraScreenViewModel.RecognizedTextBlock>
 ) {
     AndroidView(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier.fillMaxSize().background(Color(43, 40, 43)),
         factory = { context ->
             val photoView = PhotoView(context)
             try {
@@ -106,17 +112,17 @@ fun OverlayTextOnImage(
 
                             // 🔥 gray filter
                             val overlayPaint = Paint().apply {
-                                color = Color.argb(100, 150, 150, 150) // Серый цвет с прозрачностью
+                                color = LegacyColor.argb(100, 150, 150, 150) // Серый цвет с прозрачностью
                                 style = Paint.Style.FILL
                             }
                             canvas.drawRect(0f, 0f, mutableBitmap.width.toFloat(), mutableBitmap.height.toFloat(), overlayPaint)
 
                             val boxPaint = Paint().apply {
-                                color = Color.WHITE
+                                color = LegacyColor.WHITE
                                 style = Paint.Style.FILL
                             }
                             val textPaint = Paint().apply {
-                                color = Color.BLACK
+                                color = LegacyColor.BLACK
                                 textSize = 50f
                                 typeface = Typeface.DEFAULT_BOLD
                             }
@@ -187,6 +193,7 @@ private fun drawTextScaledToWidth(
 fun ProcessAndDisplayImage(uri: Uri, translatedImageViewModel: TranslatedImageViewModel) {
     var translatedTextBlocks by remember { mutableStateOf<List<CameraScreenViewModel.RecognizedTextBlock>>(emptyList()) }
     var shouldOverlay by remember { mutableStateOf(false) }
+    var isLoading by remember { mutableStateOf(true) }  // ✅ Добавлено состояние загрузки
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
 
@@ -200,17 +207,27 @@ fun ProcessAndDisplayImage(uri: Uri, translatedImageViewModel: TranslatedImageVi
                     }
                     translatedTextBlocks = translatedBlocks
                     shouldOverlay = translatedTextBlocks.isNotEmpty()
+                    isLoading = false  // ✅ Завершаем загрузку
                 }
             }
         } catch (e: Exception) {
             Log.d("TEKKEN", e.message.toString())
+            isLoading = false  // ✅ В случае ошибки тоже завершаем загрузку
         }
     }
 
-    if (shouldOverlay) {
+    if (isLoading) {
+        // ✅ Экран загрузки
+        Box(
+            modifier = Modifier
+                .fillMaxSize().background(Color(43, 40, 43)),
+            contentAlignment = Alignment.Center
+        ) {
+            CircularProgressIndicator()
+        }
+    } else if (shouldOverlay) {
         OverlayTextOnImage(uri, translatedTextBlocks)
     }
 }
-
 
 

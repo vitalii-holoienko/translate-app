@@ -203,16 +203,9 @@ fun Header(){
                     modifier = Modifier
                         .align(alignment = Alignment.Center)
                 )
-                
-
             }
-
-
         }
-
     }
-
-
 }
 
 @Composable
