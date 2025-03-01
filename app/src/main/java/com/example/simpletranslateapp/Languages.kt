@@ -2,7 +2,7 @@ package com.example.simpletranslateapp
 
 class Languages {
     companion object{
-        public val languages = mapOf<String, String>(
+        val languages = mapOf<String, String>(
             "Detect automatically" to "",
             "Albanian" to "sq",
             "Arabic" to "ar",
@@ -35,18 +35,39 @@ class Languages {
             "Portuguese" to "pt",
             "Romanian" to "ro",
             "Russian" to "ru",
-            "Russian" to "ru",
             "Slovak" to "sk",
             "Spanish" to "es",
-            "Albanian" to "sq",
             "Serbian" to "sr",
             "Ukrainian" to "uk",
             "Uzbek" to "uz"
         )
-        public fun getAmountOfLanguages():Int{
-            return languages.size
-        }
+        val recognizableLanguages = mapOf<String, String>(
+            "Albanian" to "sq",
+            "Catalan" to "ca",
+            "Czech" to "cs",
+            "Chinese" to "zh",
+            "Danish" to "da",
+            "Dutch" to "nl",
+            "English" to "en",
+            "Esperanto" to "eo",
+            "Finnish" to "fi",
+            "French" to "fr",
+            "Hindi" to "hi",
+            "Indonesian" to "id",
+            "Italian" to "it",
+            "Korean" to "ko",
+            "Latvian" to "lv",
+            "Lithuanian" to "lt",
+            "Polish" to "pl",
+            "Portuguese" to "pt",
+            "Romanian" to "ro",
+            "Slovak" to "sk",
+            "Spanish" to "es",
+            "Serbian" to "sr",
+            "Uzbek" to "uz"
+        )
     }
+
 
 
 }

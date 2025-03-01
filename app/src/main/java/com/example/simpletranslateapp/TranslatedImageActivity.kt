@@ -112,7 +112,7 @@ fun OverlayTextOnImage(
 
                             // 🔥 gray filter
                             val overlayPaint = Paint().apply {
-                                color = LegacyColor.argb(100, 150, 150, 150) // Серый цвет с прозрачностью
+                                color = LegacyColor.argb(100, 150, 150, 150)
                                 style = Paint.Style.FILL
                             }
                             canvas.drawRect(0f, 0f, mutableBitmap.width.toFloat(), mutableBitmap.height.toFloat(), overlayPaint)
@@ -145,7 +145,7 @@ fun OverlayTextOnImage(
                         }
                     })
             } catch (e: Exception) {
-                Log.d("TEKKEN", e.message.toString())
+                Log.d("main", e.message.toString())
             }
             photoView.apply {
                 maximumScale = 5.0f
@@ -183,8 +183,6 @@ private fun drawTextScaledToWidth(
         val textX = backgroundLeft + padding
         val textY = backgroundTop + textPaint.textSize
         canvas.drawText(line, textX, textY, textPaint)
-
-        // 📌 Сдвигаем `currentTop`, чтобы учесть новую высоту текста
         currentTop = backgroundBottom + padding
     }
 }
@@ -207,17 +205,16 @@ fun ProcessAndDisplayImage(uri: Uri, translatedImageViewModel: TranslatedImageVi
                     }
                     translatedTextBlocks = translatedBlocks
                     shouldOverlay = translatedTextBlocks.isNotEmpty()
-                    isLoading = false  // ✅ Завершаем загрузку
+                    isLoading = false
                 }
             }
         } catch (e: Exception) {
             Log.d("TEKKEN", e.message.toString())
-            isLoading = false  // ✅ В случае ошибки тоже завершаем загрузку
+            isLoading = false
         }
     }
 
     if (isLoading) {
-        // ✅ Экран загрузки
         Box(
             modifier = Modifier
                 .fillMaxSize().background(Color(43, 40, 43)),

@@ -35,7 +35,13 @@ class CameraScreenViewModel(val database:DataBase) : ViewModel() {
     }
     var sourceLanguage =                 MutableLiveData<String>()
     var targetLanguage =                 MutableLiveData<String>()
+    var recognizableLanguage =           MutableLiveData<Boolean>(false)
 
+    fun checkLanguageSupport(language : String){
+        Languages.recognizableLanguages.forEach(){
+            if(it.key == language) recognizableLanguage.value = true
+        }
+    }
 
     init {
         Log.d("TEKKEN", "INIT")

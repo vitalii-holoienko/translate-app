@@ -47,6 +47,8 @@ import androidx.compose.material3.Divider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -54,6 +56,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -80,6 +83,8 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.simpletranslateapp.ui.theme.SimpleTranslateAppTheme
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 import java.io.File
 
 class CameraScreenActivity : ComponentActivity() {
@@ -117,6 +122,7 @@ class CameraScreenActivity : ComponentActivity() {
         }
 
 
+        viewModel.checkLanguageSupport(viewModel.sourceLanguage.value!!)
 
         setContent {
             SimpleTranslateAppTheme {
@@ -134,37 +140,39 @@ class CameraScreenActivity : ComponentActivity() {
 @Composable
 fun UI(viewModel: CameraScreenViewModel) {
     var imageUri by remember { mutableStateOf<Uri?>(null) }
-    val context = LocalContext.current;
-    val imageCapture: ImageCapture = remember {
-        ImageCapture.Builder().build()
-    }
+    val context = LocalContext.current
+    val imageCapture: ImageCapture = remember { ImageCapture.Builder().build() }
+    val snackbarHostState = remember { SnackbarHostState() } // Хранит состояние Snackbar
+    val scope = rememberCoroutineScope()
+
     Scaffold(
-        topBar = {
-            Header()
-        },
-        bottomBar = {
-            Footer(viewModel)
-        },
-        content = {padding->
+        topBar = { Header() },
+        bottomBar = { Footer(viewModel) },
+        snackbarHost = { SnackbarHost(snackbarHostState) }, // Добавляем SnackbarHost в Scaffold
+        content = { padding ->
             CameraCapture(
-                onImageCaptured = { uri,  ->
+                onImageCaptured = { uri ->
                     imageUri = uri
                     val intent = Intent(context, TranslatedImageActivity::class.java).also {
                         val resized = Tools.processImage(imageUri!!, context)
-                        it.putExtra("imageUri", resized.toString());
+                        it.putExtra("imageUri", resized.toString())
                     }
                     context.startActivity(intent)
                 },
                 onError = { exc ->
                     Log.e("CameraX", "Error capturing image: ${exc.localizedMessage}")
+                    scope.launch {
+                        snackbarHostState.showSnackbar("Ошибка: ${exc.localizedMessage}")
+                    }
                 },
-                padding,
-                imageCapture
+                paddingValues = padding,
+                imageCapture = imageCapture,
+                viewModel = viewModel,
+                snackbarHostState = snackbarHostState, // Передаем SnackbarHostState
+                scope = scope
             )
-
         }
     )
-
 }
 
 @Composable
@@ -213,68 +221,59 @@ fun CameraCapture(
     onImageCaptured: (Uri) -> Unit,
     onError: (ImageCaptureException) -> Unit,
     paddingValues: PaddingValues,
-    imageCapture : ImageCapture
+    imageCapture: ImageCapture,
+    viewModel: CameraScreenViewModel,
+    snackbarHostState: SnackbarHostState, // Получаем SnackbarHostState
+    scope: CoroutineScope // Получаем CoroutineScope
 ) {
+    val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
+    val recognizableLanguage by viewModel.recognizableLanguage.observeAsState(false)
+
     Box(
         modifier = Modifier
-            .fillMaxWidth()
-            .fillMaxHeight()
+            .fillMaxSize()
             .padding(paddingValues)
             .background(Color(43, 40, 43))
-    ){
-        val lifecycleOwner = LocalLifecycleOwner.current
-        val context = LocalContext.current
-        Box(
-            modifier = Modifier.fillMaxSize()
-        ){
-            AndroidView(
-                modifier = Modifier
-                    .clip(shape = RoundedCornerShape(0.dp, 0.dp, 20.dp, 20.dp))
-                    .background(Color.Red, shape = RoundedCornerShape(0.dp))
-                    .align(Alignment.TopCenter)
+    ) {
+        AndroidView(
+            modifier = Modifier
+                .clip(shape = RoundedCornerShape(0.dp, 0.dp, 20.dp, 20.dp))
+                .align(Alignment.TopCenter),
+            factory = { ctx ->
+                val previewView = PreviewView(ctx)
+                val cameraProviderFuture = ProcessCameraProvider.getInstance(ctx)
+                cameraProviderFuture.addListener({
+                    val cameraProvider = cameraProviderFuture.get()
+                    val preview = androidx.camera.core.Preview.Builder().build().also {
+                        it.setSurfaceProvider(previewView.surfaceProvider)
+                    }
+                    val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
+                    try {
+                        cameraProvider.unbindAll()
+                        cameraProvider.bindToLifecycle(
+                            lifecycleOwner,
+                            cameraSelector,
+                            preview,
+                            imageCapture
+                        )
+                    } catch (exc: Exception) {
+                        Log.e("CameraX", "Use case binding failed", exc)
+                    }
+                }, ContextCompat.getMainExecutor(ctx))
+                previewView
+            }
+        )
 
-                ,
-                factory = { ctx ->
-                    val previewView = PreviewView(ctx)
-
-                    val cameraProviderFuture = ProcessCameraProvider.getInstance(ctx)
-                    cameraProviderFuture.addListener({
-                        val cameraProvider = cameraProviderFuture.get()
-                        val preview = androidx.camera.core.Preview.Builder().build().also {
-                            it.setSurfaceProvider(previewView.surfaceProvider)
-                        }
-
-                        val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
-
-                        try {
-                            cameraProvider.unbindAll()
-                            cameraProvider.bindToLifecycle(
-                                lifecycleOwner,
-                                cameraSelector,
-                                preview,
-                                imageCapture
-                            )
-                        } catch (exc: Exception) {
-                            Log.e("CameraX", "Use case binding failed", exc)
-                        }
-                    }, ContextCompat.getMainExecutor(ctx))
-
-                    previewView
-                }
-            )
-
-            Button(
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .padding(20.dp)
-                    .size(80.dp),
-
-
-                shape = CircleShape,
-                colors = ButtonDefaults.buttonColors(contentColor = Color.White, containerColor = Color.White),
-
-
-                onClick = {
+        Button(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(20.dp)
+                .size(80.dp),
+            shape = CircleShape,
+            colors = ButtonDefaults.buttonColors(contentColor = Color.White, containerColor = Color.White),
+            onClick = {
+                if (recognizableLanguage) {
                     val outputOptions = ImageCapture.OutputFileOptions.Builder(
                         File(context.externalCacheDir, "${System.currentTimeMillis()}.jpg")
                     ).build()
@@ -284,7 +283,6 @@ fun CameraCapture(
                         ContextCompat.getMainExecutor(context),
                         object : ImageCapture.OnImageSavedCallback {
                             override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
-                                val savedUri = outputFileResults.savedUri
                                 onImageCaptured(outputFileResults.savedUri!!)
                             }
 
@@ -293,20 +291,20 @@ fun CameraCapture(
                             }
                         }
                     )
-                },
-
-                ) {
-                Icon(
-                    imageVector = Icons.Default.Favorite, // Пример иконки
-                    contentDescription = "Favorite",
-                    tint = Color.White
-                )
-
+                } else {
+                    scope.launch {
+                        snackbarHostState.showSnackbar("Text recognition via camera is not supported for this language.")
+                    }
+                }
             }
+        ) {
+            Icon(
+                imageVector = Icons.Default.Favorite,
+                contentDescription = "Capture",
+                tint = Color.White
+            )
         }
-
-
-   }
+    }
 }
 @Composable
 fun Footer(viewModel: CameraScreenViewModel

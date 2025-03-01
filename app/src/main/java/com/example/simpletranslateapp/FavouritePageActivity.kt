@@ -183,13 +183,7 @@ fun Header(viewModel : FavouritePageViewModel){
                             viewModel.startTypingSearchQuery()
                         }
                 )
-
-
             }
-
-
-
-
     }
 }
 
