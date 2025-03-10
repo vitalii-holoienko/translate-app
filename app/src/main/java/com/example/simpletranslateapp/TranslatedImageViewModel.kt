@@ -50,6 +50,8 @@ import kotlin.coroutines.resumeWithException
 
 class TranslatedImageViewModel(val database:DataBase) : ViewModel() {
     private var textRecognizer : TextRecognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
+    var showTranslatedText = MutableLiveData<Boolean>(true)
+    var isLoading = MutableLiveData<Boolean>(true)
 
     companion object{
         @Suppress("UNCHECKED_CAST")

@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModelProvider
 import com.example.simpletranslateapp.ui.theme.SimpleTranslateAppTheme
+import kotlinx.coroutines.launch
 
 class ChooseLanguageActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -89,7 +90,9 @@ fun Header(viewModel: ChooseLanguageViewModel) {
 
         if (isSearching) {
             TextField(
-                modifier = Modifier.background(Color(43, 40, 43)).focusRequester(focusRequester),
+                modifier = Modifier
+                    .background(Color(43, 40, 43))
+                    .focusRequester(focusRequester),
                 value = searchText,
                 onValueChange = { viewModel.changeSearchText(it) },
                 placeholder = { Text(text = "Search") },
@@ -141,8 +144,12 @@ fun Header(viewModel: ChooseLanguageViewModel) {
 @Composable
 fun MainContent(padding: PaddingValues, viewModel: ChooseLanguageViewModel) {
     val list = remember { Languages.languages.toList() }
+    val recognizableList = remember {Languages.recognizableLanguages.toList()}
     val searchText by viewModel.searchText.collectAsState()
-    val filteredList = list.filter { it.first.contains(searchText, ignoreCase = true) }
+    var filteredList = list.filter { it.first.contains(searchText, ignoreCase = true) }
+    if(viewModel.camera.value==true){
+        filteredList = recognizableList.filter { it.first.contains(searchText, ignoreCase = true) }
+    }
 
     Column(
         modifier = Modifier
@@ -166,7 +173,9 @@ fun MainContent(padding: PaddingValues, viewModel: ChooseLanguageViewModel) {
         }
 
         Column(
-            modifier = Modifier.fillMaxWidth().background(Color(43, 40, 43))
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(Color(43, 40, 43))
         ) {
             filteredList.forEach {
                 languageBox(it.first, it.second, viewModel)
@@ -185,21 +194,47 @@ fun languageBox(key: String, value: String, viewModel: ChooseLanguageViewModel) 
             .height(60.dp)
             .background(Color(43, 40, 43))
             .clickable {
-                val intent = Intent(context, if (viewModel.camera.value == true) CameraScreenActivity::class.java else MainActivity::class.java).apply {
-                    putExtra(if (viewModel.from.value == "source") "sourceLanguage" else "targetLanguage", key)
-                    putExtra("input", viewModel.savedInputString.value)
+                if(viewModel.camera.value == true){
+                    val intent = Intent(
+                        context,
+                        CameraScreenActivity::class.java
+                    ).apply {
+                        putExtra(
+                            if (viewModel.from.value == "source") "choseSourceLanguage" else "choseTargetLanguage",
+                            key
+                        )
+                    }
+                    context.startActivity(intent)
+                }else{
+                    val intent = Intent(
+                        context,
+                        MainActivity::class.java
+                    ).apply {
+                        putExtra(
+                            if (viewModel.from.value == "source") "sourceLanguage" else "targetLanguage",
+                            key
+                        )
+                        putExtra("input", viewModel.savedInputString.value)
+                    }
+                    context.startActivity(intent)
                 }
-                context.startActivity(intent)
+
             },
         contentAlignment = Alignment.CenterStart
     ) {
-        Text(
-            modifier = Modifier.padding(10.dp),
-            text = key,
-            fontFamily = FontFamily(Font(R.font.inter_regular)),
-            color = Color(224, 224, 224),
-            fontSize = 18.sp
-        )
+
+
+            Text(
+                modifier = Modifier.padding(10.dp),
+                text = key,
+                fontFamily = FontFamily(Font(R.font.inter_regular)),
+                color = Color(224, 224, 224),
+                fontSize = 18.sp
+            )
+
+
+
+
     }
     Divider(color = Color(53, 50, 53))
 }
