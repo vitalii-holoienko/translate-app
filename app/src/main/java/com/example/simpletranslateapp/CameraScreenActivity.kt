@@ -291,9 +291,16 @@ fun CameraCapture(
                             }
                         }
                     )
-                } else {
+                } else if(viewModel.sourceLanguage.value == "Detect automatically"){
                     scope.launch {
-                        snackbarHostState.showSnackbar("Text recognition via camera is not supported for this language.")
+                        snackbarHostState.showSnackbar("Text recognition via camera is not supporting automatic detection.")
+                    }
+                }
+
+
+                else {
+                    scope.launch {
+                        snackbarHostState.showSnackbar("Text recognition via camera is not supporting this language.")
                     }
                 }
             }

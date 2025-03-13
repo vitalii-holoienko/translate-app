@@ -147,7 +147,7 @@ fun MainContent(padding: PaddingValues, viewModel: ChooseLanguageViewModel) {
     val recognizableList = remember {Languages.recognizableLanguages.toList()}
     val searchText by viewModel.searchText.collectAsState()
     var filteredList = list.filter { it.first.contains(searchText, ignoreCase = true) }
-    if(viewModel.camera.value==true){
+    if(viewModel.camera.value==true && viewModel.from.value == "source"){
         filteredList = recognizableList.filter { it.first.contains(searchText, ignoreCase = true) }
     }
 

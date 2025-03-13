@@ -22,6 +22,7 @@ class CameraScreenViewModel(val database:DataBase) : ViewModel() {
         var text: String,
         val boundingBox: Rect?
 
+
     )
 
     companion object{

@@ -66,6 +66,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -123,7 +124,8 @@ class TranslatedImageActivity : ComponentActivity() {
                         .fillMaxSize()
                         .background(Color(43, 40, 43))
                 ) {
-                    Top(viewModel)
+
+                    Top()
 
                     Divider(
                         color = Color(67, 67, 67),
@@ -135,6 +137,7 @@ class TranslatedImageActivity : ComponentActivity() {
                     Box(
                         modifier = Modifier
                             .weight(1f)
+                            .clipToBounds()
 
                     ) {
                         ProcessAndDisplayImage(uri!!, viewModel)
@@ -147,6 +150,7 @@ class TranslatedImageActivity : ComponentActivity() {
                             .fillMaxWidth()
                     )
 
+
                     Bottom(viewModel)
                 }
 
@@ -156,7 +160,7 @@ class TranslatedImageActivity : ComponentActivity() {
     }
 }
 @Composable
-fun Top(translatedImageViewModel: TranslatedImageViewModel) {
+fun Top() {
     val context = LocalContext.current
     val activity = context as? Activity
     Column(modifier = Modifier.background(Color(43, 40, 43))) {
