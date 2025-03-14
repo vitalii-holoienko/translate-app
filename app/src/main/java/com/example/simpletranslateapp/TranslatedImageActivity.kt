@@ -9,6 +9,7 @@ import android.graphics.Canvas
 import android.graphics.Color.rgb
 import android.graphics.Color as LegacyColor
 import android.graphics.Paint
+import android.graphics.PointF
 import android.graphics.Rect
 import android.graphics.Typeface
 import android.graphics.drawable.Drawable
@@ -90,6 +91,7 @@ import com.bumptech.glide.request.target.CustomTarget
 import com.example.simpletranslateapp.ui.theme.SimpleTranslateAppTheme
 import com.github.chrisbanes.photoview.PhotoView
 import com.google.mlkit.vision.common.InputImage
+import com.google.mlkit.vision.text.Text
 import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions
 import kotlinx.coroutines.CoroutineScope
@@ -101,6 +103,7 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.launch
 import java.io.File
 import java.io.IOException
+import kotlin.math.atan2
 
 class TranslatedImageActivity : ComponentActivity() {
     private lateinit var viewModel: TranslatedImageViewModel
@@ -296,7 +299,7 @@ fun OverlayTextOnImage(
 
                                     translatedBlocks.forEach { block ->
                                         block.boundingBox?.let { box ->
-                                            drawTextScaledToWidth(canvas, block.text, box, boxPaint, textPaint)
+                                            drawTextScaledToWidth(canvas, block.text, box, boxPaint, textPaint, block.lines)
                                         }
                                     }
                                     photoView.setImageBitmap(mutableBitmap)
@@ -329,29 +332,49 @@ private fun drawTextScaledToWidth(
     text: String,
     box: Rect,
     boxPaint: Paint,
-    textPaint: Paint
+    textPaint: Paint,
+    lines: List<Text.Line>
 ) {
-    val lines = text.split("\n")
-    val padding = 8
-
-    var currentTop = box.top.toFloat()
-
+    val padding = 12
     lines.forEachIndexed { index, line ->
-        val textWidth = textPaint.measureText(line) + padding * 2
+
+        val angle = line.getAngle()
+
+        val boundingBox = line.getBoundingBox()
+        val topLeft = PointF(boundingBox!!.left.toFloat(), boundingBox.top.toFloat())
+
+
+        canvas.save()
+
+
+        val centerX = topLeft.x + boundingBox.width() / 2
+        val centerY = topLeft.y + boundingBox.height() / 2
+
+
+        canvas.rotate(angle, centerX, centerY)
+
+
+        val textWidth = textPaint.measureText(line.text) + padding * 2
         val textHeight = textPaint.textSize + padding
-        val backgroundLeft = box.left.toFloat()
-        val backgroundTop = currentTop - padding / 2
+
+
+        val backgroundLeft = centerX - textWidth / 2
+        val backgroundTop = centerY - textHeight / 2
         val backgroundRight = backgroundLeft + textWidth
         val backgroundBottom = backgroundTop + textHeight
+
 
         canvas.drawRect(
             backgroundLeft, backgroundTop, backgroundRight, backgroundBottom, boxPaint
         )
 
-        val textX = backgroundLeft + padding
-        val textY = backgroundTop + textPaint.textSize
-        canvas.drawText(line, textX, textY, textPaint)
-        currentTop = backgroundBottom + padding
+
+        val textX = centerX - textWidth / 2 + padding
+        val textY = centerY + textPaint.textSize / 2 + padding
+        canvas.drawText(line.text, textX, textY, textPaint)
+
+      
+        canvas.restore()
     }
 }
 @RequiresApi(Build.VERSION_CODES.P)
@@ -385,7 +408,6 @@ fun ProcessAndDisplayImage(uri: Uri, translatedImageViewModel: TranslatedImageVi
                     }
                 }
             } catch (e: Exception) {
-                Log.d("TEKKEN", e.message.toString())
                 translatedImageViewModel.isLoading.value = false
             }
         }

@@ -11,6 +11,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.CreationExtras
 import com.google.mlkit.vision.common.InputImage
+import com.google.mlkit.vision.text.Text
 import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions
 import kotlinx.coroutines.GlobalScope
@@ -20,7 +21,9 @@ import java.io.IOException
 class CameraScreenViewModel(val database:DataBase) : ViewModel() {
     data class RecognizedTextBlock(
         var text: String,
-        val boundingBox: Rect?
+        val boundingBox: Rect?,
+        var lines : List<Text.Line>
+
 
 
     )

@@ -79,6 +79,7 @@ class TranslatedImageViewModel(val database:DataBase) : ViewModel() {
                             CameraScreenViewModel.RecognizedTextBlock(
                                 text = block.text,
                                 boundingBox = block.boundingBox,
+                                lines = block.lines
                             )
                         }
                         onTextRecognized(textBlocks)
