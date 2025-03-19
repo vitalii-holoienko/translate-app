@@ -156,6 +156,8 @@ fun UI(viewModel: CameraScreenViewModel) {
                     val intent = Intent(context, TranslatedImageActivity::class.java).also {
                         val resized = Tools.processImage(imageUri!!, context)
                         it.putExtra("imageUri", resized.toString())
+                        it.putExtra("sourceLanguage", viewModel.sourceLanguage.value)
+                        it.putExtra("targetLanguage", viewModel.targetLanguage.value)
                     }
                     context.startActivity(intent)
                 },

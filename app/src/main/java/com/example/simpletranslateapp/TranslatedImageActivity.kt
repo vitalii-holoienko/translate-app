@@ -1,10 +1,7 @@
 package com.example.simpletranslateapp
 
 import android.app.Activity
-import android.content.Context
-import android.content.Context.CAMERA_SERVICE
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.graphics.Color.rgb
 import android.graphics.Color as LegacyColor
@@ -13,23 +10,15 @@ import android.graphics.PointF
 import android.graphics.Rect
 import android.graphics.Typeface
 import android.graphics.drawable.Drawable
-import android.hardware.camera2.CameraAccessException
-import android.hardware.camera2.CameraCharacteristics
-import android.hardware.camera2.CameraManager
-import android.media.Image
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
-import android.transition.Transition
 import android.util.Log
-import android.util.SparseIntArray
-import android.widget.ImageView
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -38,26 +27,19 @@ import androidx.compose.foundation.layout.Column
 
 
 import androidx.compose.foundation.layout.Row
-
-import androidx.compose.foundation.layout.fillMaxHeight
-
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Divider
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
+
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
@@ -69,10 +51,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.scale
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
-
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -82,29 +61,13 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModelProvider
-import coil.compose.rememberAsyncImagePainter
 import com.bumptech.glide.Glide
-import com.bumptech.glide.request.RequestOptions
 import com.bumptech.glide.request.target.CustomTarget
 import com.example.simpletranslateapp.ui.theme.SimpleTranslateAppTheme
 import com.github.chrisbanes.photoview.PhotoView
-import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.Text
-import com.google.mlkit.vision.text.TextRecognition
-import com.google.mlkit.vision.text.latin.TextRecognizerOptions
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.DelicateCoroutinesApi
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.launch
-import java.io.File
-import java.io.IOException
-import kotlin.math.atan2
-
 class TranslatedImageActivity : ComponentActivity() {
     private lateinit var viewModel: TranslatedImageViewModel
     @RequiresApi(Build.VERSION_CODES.P)
@@ -117,7 +80,8 @@ class TranslatedImageActivity : ComponentActivity() {
         val uri = uriString?.let { Uri.parse(it) }
 
 
-
+        viewModel.sourceLanguage = intent.getStringExtra("sourceLanguage")!!
+        viewModel.targetLanguage = intent.getStringExtra("targetLanguage")!!
 
         setContent {
             SimpleTranslateAppTheme {
@@ -336,6 +300,8 @@ private fun drawTextScaledToWidth(
     lines: List<Text.Line>
 ) {
     val padding = 12
+    val lineSpacing = 6 
+
     lines.forEachIndexed { index, line ->
 
         val angle = line.getAngle()
@@ -343,37 +309,29 @@ private fun drawTextScaledToWidth(
         val boundingBox = line.getBoundingBox()
         val topLeft = PointF(boundingBox!!.left.toFloat(), boundingBox.top.toFloat())
 
-
         canvas.save()
 
-
         val centerX = topLeft.x + boundingBox.width() / 2
-        val centerY = topLeft.y + boundingBox.height() / 2
-
+        val centerY = topLeft.y + boundingBox.height() / 2 + index * lineSpacing
 
         canvas.rotate(angle, centerX, centerY)
 
-
         val textWidth = textPaint.measureText(line.text) + padding * 2
         val textHeight = textPaint.textSize + padding
-
 
         val backgroundLeft = centerX - textWidth / 2
         val backgroundTop = centerY - textHeight / 2
         val backgroundRight = backgroundLeft + textWidth
         val backgroundBottom = backgroundTop + textHeight
 
-
         canvas.drawRect(
             backgroundLeft, backgroundTop, backgroundRight, backgroundBottom, boxPaint
         )
 
-
         val textX = centerX - textWidth / 2 + padding
-        val textY = centerY + textPaint.textSize / 2 + padding
+        val textY = centerY + textPaint.textSize / 3
         canvas.drawText(line.text, textX, textY, textPaint)
 
-      
         canvas.restore()
     }
 }
@@ -403,13 +361,18 @@ fun ProcessAndDisplayImage(uri: Uri, translatedImageViewModel: TranslatedImageVi
                             block.copy(text = translatedText)
                         }
                         translatedTextBlocks = translatedBlocks
+                        translatedImageViewModel.upsertHistoryString(translatedBlocks)
                         shouldOverlay = translatedTextBlocks.isNotEmpty()
+
                         translatedImageViewModel.isLoading.value = false
                     }
                 }
+
+
             } catch (e: Exception) {
                 translatedImageViewModel.isLoading.value = false
             }
+
         }
 
         if (isLoading) {

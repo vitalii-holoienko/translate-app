@@ -52,7 +52,11 @@ class TranslatedImageViewModel(val database:DataBase) : ViewModel() {
     private var textRecognizer : TextRecognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
     var showTranslatedText = MutableLiveData<Boolean>(true)
     var isLoading = MutableLiveData<Boolean>(true)
-
+    var wholeRecognizedTextString = MutableLiveData<String>("")
+    var translatedTextString = MutableLiveData<String>("")
+    var sourceLanguage : String = ""
+    var targetLanguage : String = ""
+    val MAX_AMOUNT_OF_LINES_IN_HISTORY_PAGE = 10
     companion object{
         @Suppress("UNCHECKED_CAST")
         val factory: ViewModelProvider.Factory = object: ViewModelProvider.Factory{
@@ -75,13 +79,15 @@ class TranslatedImageViewModel(val database:DataBase) : ViewModel() {
             textRecognizer.process(inputImage)
                     .addOnSuccessListener {
                         val textBlocks = it.textBlocks.map { block ->
-
+                            wholeRecognizedTextString.value += block.text
+                            Log.d("wholeRecognizedTextString", wholeRecognizedTextString.value!!)
                             CameraScreenViewModel.RecognizedTextBlock(
                                 text = block.text,
                                 boundingBox = block.boundingBox,
                                 lines = block.lines
                             )
                         }
+
                         onTextRecognized(textBlocks)
 
                     }
@@ -90,6 +96,30 @@ class TranslatedImageViewModel(val database:DataBase) : ViewModel() {
                     }
         } catch (e : Exception){
             Log.d("TEKKEN", e.message.toString())
+        }
+    }
+
+    fun upsertHistoryString(translations : List<CameraScreenViewModel.RecognizedTextBlock>){
+        translations.map{block->
+            translatedTextString.value+=block.text
+        }
+        Log.d("TEKKEN", "INPUT: " + wholeRecognizedTextString.value)
+
+
+
+        GlobalScope.launch {
+            if(!database.historyStringDao.exists(wholeRecognizedTextString.value!!)){
+                val amount = database.historyStringDao.getItemCount()
+
+                if(amount >= MAX_AMOUNT_OF_LINES_IN_HISTORY_PAGE){
+                    database.historyStringDao.deleteOldestString()
+                }
+
+                val historyString = HistoryString(wholeRecognizedTextString.value!!, translatedTextString.value!!, sourceLanguage, targetLanguage)
+
+                database.historyStringDao.upsertString(historyString)
+            }
+
         }
     }
 }

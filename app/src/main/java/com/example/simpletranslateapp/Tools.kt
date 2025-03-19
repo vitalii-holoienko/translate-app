@@ -21,10 +21,11 @@ class Tools {
     companion object {
         @JvmStatic
         fun TruncateTextIfNeeded(originalText: String): String {
+            var text = originalText.replace('\n', ' ')
             return if (originalText.length > 33) {
-                "${originalText.take(30)}..."
+                "${text.take(30)}..."
             } else {
-                originalText
+                text
             }
         }
         fun fromTimeStampGetHM(timestamp: Long) : String {
@@ -76,23 +77,7 @@ class Tools {
             fileOutPut.close()
             return Uri.fromFile(tempFile)
         }
-        private fun getImageResolution(context: Context, uri: Uri): Pair<Int, Int>? {
-            return try {
-                // Получаем InputStream для изображения
-                val inputStream: InputStream = context.contentResolver.openInputStream(uri) ?: return null
 
-                // Используем BitmapFactory для получения размеров
-                val options = BitmapFactory.Options()
-                options.inJustDecodeBounds = true // Только размеры, без загрузки изображения
-                BitmapFactory.decodeStream(inputStream, null, options)
-
-                Log.d("TEKKEN", options.outWidth.toString() + " " + options.outHeight.toString())
-                Pair(options.outWidth, options.outHeight)
-            } catch (e: Exception) {
-                e.printStackTrace()
-                null
-            }
-        }
         fun processImage(uri : Uri, context : Context) : Uri {
             val p = getCorrectedImageResolution(context, uri)
             val resized = if (p!!.first > p.second) resizeImage(context, uri, 2048, 1536)
