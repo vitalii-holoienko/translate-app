@@ -1,6 +1,7 @@
 package com.example.simpletranslateapp
 
 import android.app.Activity
+import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color.rgb
@@ -27,6 +28,7 @@ import androidx.compose.foundation.layout.Column
 
 
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -138,27 +140,46 @@ fun Top() {
                 .background(Color(43, 40, 43)),
             contentAlignment = Alignment.Center
         ) {
-            Text(
-                text = stringResource(R.string.simpletranslate),
-                color = Color(224, 224, 224),
-                fontSize = 27.sp,
-                fontFamily = FontFamily(Font(R.font.salsa_regular)),
-                textAlign = TextAlign.Center,
-            )
-
             Row(
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                // Левая иконка (Cancel)
                 Image(
                     painter = painterResource(id = R.drawable.cancel_arrow),
                     contentDescription = null,
                     modifier = Modifier
-                        .size(47.dp)
-                        .padding(6.dp, 5.dp, 0.dp, 6.dp)
-                        .scale(1.1f)
+                        .size(35.dp)
                         .clickable {
                             activity?.finish()
+                        }
+                )
+
+                Spacer(modifier = Modifier.weight(1f)) // Раздвигаем текст в центр
+
+                // Текст в центре
+                Text(
+                    text = stringResource(R.string.simpletranslate),
+                    color = Color(224, 224, 224),
+                    fontSize = 27.sp,
+                    fontFamily = FontFamily(Font(R.font.salsa_regular)),
+                    textAlign = TextAlign.Center
+                )
+
+                Spacer(modifier = Modifier.weight(1f)) // Раздвигаем иконку вправо
+
+                // Правая иконка (Home)
+                Image(
+                    painter = painterResource(id = R.drawable.home_icon),
+                    contentDescription = null,
+                    modifier = Modifier
+                        .size(35.dp)
+                        .clickable {
+                            val intent = Intent(context, MainActivity::class.java)
+                            context.startActivity(intent)
+
                         }
                 )
             }
@@ -222,6 +243,9 @@ fun OverlayTextOnImage(
     uri: Uri,
     translatedBlocks: List<CameraScreenViewModel.RecognizedTextBlock>
 ) {
+    translatedBlocks.map{
+        Log.d("TEKKEN", it.text)
+    }
 
         Column(modifier=Modifier.background(Color(43, 40, 43))){
             AndroidView(
@@ -262,7 +286,9 @@ fun OverlayTextOnImage(
                                     }
 
                                     translatedBlocks.forEach { block ->
+
                                         block.boundingBox?.let { box ->
+
                                             drawTextScaledToWidth(canvas, block.text, box, boxPaint, textPaint, block.lines)
                                         }
                                     }
@@ -300,14 +326,34 @@ private fun drawTextScaledToWidth(
     lines: List<Text.Line>
 ) {
     val padding = 12
-    val lineSpacing = 6 
+    val lineSpacing = 6
+
+    val translatedLines = text.split("\n")
+
+    // Определяем минимальный размер шрифта, который подойдет всем строкам
+    var adjustedTextPaint = Paint(textPaint)
+    var minTextSize = adjustedTextPaint.textSize
 
     lines.forEachIndexed { index, line ->
+        val boundingBox = line.getBoundingBox() ?: return@forEachIndexed
+        val translatedText = translatedLines.getOrNull(index) ?: ""
 
+        // Определяем, насколько нужно уменьшить шрифт
+        while (adjustedTextPaint.measureText(translatedText) > boundingBox.width() - padding * 2 && adjustedTextPaint.textSize > 10) {
+            adjustedTextPaint.textSize -= 1
+        }
+
+        // Запоминаем минимальный размер текста
+        minTextSize = minOf(minTextSize, adjustedTextPaint.textSize)
+    }
+
+    // Применяем одинаковый размер шрифта ко всем строкам
+    adjustedTextPaint.textSize = minTextSize
+
+    lines.forEachIndexed { index, line ->
         val angle = line.getAngle()
-
-        val boundingBox = line.getBoundingBox()
-        val topLeft = PointF(boundingBox!!.left.toFloat(), boundingBox.top.toFloat())
+        val boundingBox = line.getBoundingBox() ?: return@forEachIndexed
+        val topLeft = PointF(boundingBox.left.toFloat(), boundingBox.top.toFloat())
 
         canvas.save()
 
@@ -316,21 +362,23 @@ private fun drawTextScaledToWidth(
 
         canvas.rotate(angle, centerX, centerY)
 
-        val textWidth = textPaint.measureText(line.text) + padding * 2
-        val textHeight = textPaint.textSize + padding
+        val translatedText = translatedLines.getOrNull(index) ?: ""
+
+        val textWidth = adjustedTextPaint.measureText(translatedText) + padding * 2
+        val textHeight = adjustedTextPaint.textSize + padding
 
         val backgroundLeft = centerX - textWidth / 2
         val backgroundTop = centerY - textHeight / 2
         val backgroundRight = backgroundLeft + textWidth
         val backgroundBottom = backgroundTop + textHeight
 
-        canvas.drawRect(
-            backgroundLeft, backgroundTop, backgroundRight, backgroundBottom, boxPaint
-        )
+        // Рисуем фон
+        canvas.drawRect(backgroundLeft, backgroundTop, backgroundRight, backgroundBottom, boxPaint)
 
+        // Рисуем текст
         val textX = centerX - textWidth / 2 + padding
-        val textY = centerY + textPaint.textSize / 3
-        canvas.drawText(line.text, textX, textY, textPaint)
+        val textY = centerY + adjustedTextPaint.textSize / 3
+        canvas.drawText(translatedText, textX, textY, adjustedTextPaint)
 
         canvas.restore()
     }
@@ -356,12 +404,17 @@ fun ProcessAndDisplayImage(uri: Uri, translatedImageViewModel: TranslatedImageVi
             try {
                 translatedImageViewModel.recognizeTextFromImage(context, uri) { textBlocks ->
                     coroutineScope.launch {
-                        val translatedBlocks = textBlocks.map { block ->
+                        var translatedBlocks = textBlocks.map { block ->
                             val translatedText = TranslateText.translate(block.text)
                             block.copy(text = translatedText)
                         }
                         translatedTextBlocks = translatedBlocks
+                        Log.d("TEKKEN", "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
                         translatedImageViewModel.upsertHistoryString(translatedBlocks)
+                        translatedTextBlocks.map{
+                            Log.d("TEKKEN", it.text)
+                        }
+                        Log.d("TEKKEN", "-----------------------------------------------------")
                         shouldOverlay = translatedTextBlocks.isNotEmpty()
 
                         translatedImageViewModel.isLoading.value = false
@@ -387,6 +440,7 @@ fun ProcessAndDisplayImage(uri: Uri, translatedImageViewModel: TranslatedImageVi
         }
         else if (showTranslatedText) {
             OverlayTextOnImage(uri, translatedTextBlocks)
+            Log.d("TEKKEN", "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB")
         } else if (!showTranslatedText){
             SourceImage(uri)
         }

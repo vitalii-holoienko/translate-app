@@ -225,8 +225,8 @@ fun CameraCapture(
     paddingValues: PaddingValues,
     imageCapture: ImageCapture,
     viewModel: CameraScreenViewModel,
-    snackbarHostState: SnackbarHostState, // Получаем SnackbarHostState
-    scope: CoroutineScope // Получаем CoroutineScope
+    snackbarHostState: SnackbarHostState,
+    scope: CoroutineScope
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current

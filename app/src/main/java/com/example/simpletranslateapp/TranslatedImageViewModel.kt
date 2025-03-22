@@ -80,7 +80,6 @@ class TranslatedImageViewModel(val database:DataBase) : ViewModel() {
                     .addOnSuccessListener {
                         val textBlocks = it.textBlocks.map { block ->
                             wholeRecognizedTextString.value += block.text
-                            Log.d("wholeRecognizedTextString", wholeRecognizedTextString.value!!)
                             CameraScreenViewModel.RecognizedTextBlock(
                                 text = block.text,
                                 boundingBox = block.boundingBox,
@@ -103,7 +102,7 @@ class TranslatedImageViewModel(val database:DataBase) : ViewModel() {
         translations.map{block->
             translatedTextString.value+=block.text
         }
-        Log.d("TEKKEN", "INPUT: " + wholeRecognizedTextString.value)
+
 
 
 

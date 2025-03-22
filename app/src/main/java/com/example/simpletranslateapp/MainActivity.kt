@@ -52,6 +52,8 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
@@ -61,6 +63,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
@@ -99,7 +102,9 @@ import com.google.accompanist.permissions.PermissionState
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
 import com.google.accompanist.permissions.shouldShowRationale
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.launch
 import java.io.File
 
 
@@ -182,15 +187,30 @@ fun UI(mainViewModel: MainViewModel) {
         ConnectivityObserver.Status.Unavailable
 
     val connectivityStatus by mainViewModel.connectivityObserver.observe().collectAsState(initial = c)
+    val snackbarHostState = remember { SnackbarHostState() }
+    var showSB = mainViewModel.showSnackbar.observeAsState(false)
+
+
+    val coroutineScope = rememberCoroutineScope()
 
     Scaffold(
+        snackbarHost = {
+            SnackbarHost(snackbarHostState)
+                       },
         topBar = {
-            Header(mainViewModel)
+            Header(mainViewModel, snackbarHostState, coroutineScope)
         },
         bottomBar = {
             Footer(mainViewModel)
+
         },
+
         content = { padding->
+            if(showSB.value){
+                coroutineScope.launch {
+                    snackbarHostState.showSnackbar("Donate function is currently unavailable")
+                }.invokeOnCompletion { mainViewModel.showSnackbar.value=false }
+            }
             if(connectivityStatus == ConnectivityObserver.Status.Available) MainContent(padding, mainViewModel)
             else InternetConnectionErrorWarning(padding = padding)
         }
@@ -200,7 +220,7 @@ fun UI(mainViewModel: MainViewModel) {
 }
 
 @Composable
-fun Header(mainViewModel: MainViewModel){
+fun Header(mainViewModel: MainViewModel, shs : SnackbarHostState, coroutineScope : CoroutineScope){
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -239,7 +259,10 @@ fun Header(mainViewModel: MainViewModel){
             modifier = Modifier
                 .size(50.dp)
                 .align(alignment = Alignment.CenterEnd)
-                .padding(0.dp, 5.dp, 0.dp, 6.dp),
+                .padding(0.dp, 5.dp, 0.dp, 6.dp)
+                .clickable {
+                    mainViewModel.showSnackbar.value=true
+                },
             contentScale = ContentScale.Crop
         )
     }
@@ -558,8 +581,8 @@ fun Footer(mainViewModel: MainViewModel){
                     val intent = Intent(context, TranslatedImageActivity::class.java).apply {
                         val resized = Tools.processImage(selectedImageUri!!, context)
                         putExtra("imageUri", resized.toString())
-
-
+                        putExtra("sourceLanguage", mainViewModel.sourceLanguage.value)
+                        putExtra("targetLanguage", mainViewModel.targetLanguage.value)
                     }
                     selectedImageUri = null
                     context.startActivity(intent)
@@ -567,7 +590,7 @@ fun Footer(mainViewModel: MainViewModel){
                 val cameraPermissionState: PermissionState = rememberPermissionState(Manifest.permission.CAMERA)
 
                 Image(
-                    painter = painterResource(id = R.drawable.folder), //163 3x
+                    painter = painterResource(id = R.drawable.folder),
                     contentDescription = null,
                     modifier = Modifier
                         .padding(0.dp, 0.dp, 250.dp, 0.dp)
@@ -607,10 +630,11 @@ fun Footer(mainViewModel: MainViewModel){
                         .clickable {
 
                             if (cameraPermissionState.status.isGranted) {
-                                val intent = Intent(context, CameraScreenActivity::class.java).apply {
-                                    putExtra("sourceLanguage", sourceLanguage)
-                                    putExtra("targetLanguage", targetLanguage)
-                                }
+                                val intent =
+                                    Intent(context, CameraScreenActivity::class.java).apply {
+                                        putExtra("sourceLanguage", sourceLanguage)
+                                        putExtra("targetLanguage", targetLanguage)
+                                    }
                                 context.startActivity(intent)
                             } else {
                                 cameraPermissionState.launchPermissionRequest()

@@ -22,7 +22,7 @@ class Tools {
         @JvmStatic
         fun TruncateTextIfNeeded(originalText: String): String {
             var text = originalText.replace('\n', ' ')
-            return if (originalText.length > 33) {
+            return if (originalText.length > 25) {
                 "${text.take(30)}..."
             } else {
                 text

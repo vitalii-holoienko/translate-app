@@ -81,6 +81,7 @@ class MainViewModel(val database:DataBase) : ViewModel() {
     var targetLanguage =                 MutableLiveData<String>()
 
     var stringInFavourite =              MutableLiveData<Boolean>()
+    var showSnackbar = MutableLiveData<Boolean>()
 
     val translateText = TranslateText()
 
@@ -94,8 +95,7 @@ class MainViewModel(val database:DataBase) : ViewModel() {
     lateinit var connectivityObserver: NetworkConnectivityObserver
 
     init {
-        Log.d("TEKKEN", "INIT")
-        sourceLanguage.value = "Detect Automatically"
+        sourceLanguage.value = "Detect automatically"
         targetLanguage.value = "English"
 
         changeSourceLanguage(sourceLanguage.value!!)
@@ -195,7 +195,7 @@ class MainViewModel(val database:DataBase) : ViewModel() {
     }
 
     fun swapSourceAndTargetLanguages(){
-        if(sourceLanguage.value == "Detect automatically")return
+        if(sourceLanguage.value == "Detect automatically") return
 
         sourceLanguage.value = targetLanguage.value.also { targetLanguage.value = sourceLanguage.value }
 
@@ -213,7 +213,7 @@ class MainViewModel(val database:DataBase) : ViewModel() {
     }
 
 
-    public fun saveDataToPrefs(sharedPreferences: SharedPreferences){
+    fun saveDataToPrefs(sharedPreferences: SharedPreferences){
 
         val editor = sharedPreferences.edit()
 
@@ -239,6 +239,7 @@ class MainViewModel(val database:DataBase) : ViewModel() {
     fun clearAllText(){
         inputText.value = ""
         translatedText.value = ""
+        inputTextSize.value = 30
     }
 
 

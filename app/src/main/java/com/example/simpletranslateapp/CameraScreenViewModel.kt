@@ -43,12 +43,15 @@ class CameraScreenViewModel(val database:DataBase) : ViewModel() {
 
     fun checkLanguageSupport(language : String){
         Languages.recognizableLanguages.forEach(){
-            if(it.key == language) recognizableLanguage.value = true
+            if(it.key == language) {
+                recognizableLanguage.value = true
+                return
+            }
         }
+        recognizableLanguage.value = false
     }
 
     init {
-        Log.d("TEKKEN", "INIT")
         sourceLanguage.value = "English"
         targetLanguage.value = "Russian"
 
@@ -62,7 +65,6 @@ class CameraScreenViewModel(val database:DataBase) : ViewModel() {
     }
 
     fun changeTargetLanguage(language:String){
-        Log.d("TEKKEN","language" )
         TranslateText.setTargetLanguage(language)
         targetLanguage.value = language
     }
@@ -71,7 +73,7 @@ class CameraScreenViewModel(val database:DataBase) : ViewModel() {
         if(sourceLanguage.value == "Detect automatically")return
 
         sourceLanguage.value = targetLanguage.value.also { targetLanguage.value = sourceLanguage.value }
-        Log.d("TEKKEN", sourceLanguage.value!!)
+        checkLanguageSupport(sourceLanguage.value!!)
 
         TranslateText.setSourceLanguage(sourceLanguage.value!!)
 
